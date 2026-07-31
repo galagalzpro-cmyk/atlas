@@ -1,0 +1,18 @@
+{
+  "console_errors": [],
+  "page_errors": [],
+  "checks": {
+    "title": "ATLAS — L’intelligence émotionnelle réinventée",
+    "hero_visible": true,
+    "loader_hidden": true,
+    "body_scroll_width": 1920,
+    "viewport_width": 1920,
+    "dialog_open": true,
+    "dialog_step3": true,
+    "emotion_selected": true,
+    "breath_active": true,
+    "mobile_hero_visible": true,
+    "mobile_scroll_width": 390,
+    "mobile_viewport_width": 390
+  }
+}

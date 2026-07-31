@@ -1,0 +1,11 @@
+ATLAS — INSTALLATION MAC
+
+1. Décompresse le fichier ZIP.
+2. Ouvre le dossier ATLAS_NEURAL_REINVENTED_PRO.
+3. Clic droit sur « Ouvrir ATLAS.command ».
+4. Choisis Ouvrir, puis confirme.
+5. ATLAS s'ouvre sur http://127.0.0.1:4173
+6. Laisse le Terminal ouvert pendant l'utilisation.
+
+Aucun Node.js ni npm n'est requis. Le lanceur utilise Python 3.
+En cas de blocage macOS : Réglages Système > Confidentialité et sécurité > Ouvrir quand même.
