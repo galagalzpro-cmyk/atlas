@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#03030b">
+  <meta name="color-scheme" content="dark">
+  <title>ATLAS — L’intelligence émotionnelle réinventée</title>
+  <meta name="description" content="ATLAS est une expérience immersive d’intelligence émotionnelle conçue pour comprendre, apaiser et transformer ce que vous ressentez.">
+  <link rel="canonical" href="https://atlas-emotion.fr/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="ATLAS — L’intelligence émotionnelle réinventée">
+  <meta property="og:description" content="Une présence numérique immersive pour comprendre, apaiser et avancer.">
+  <meta property="og:image" content="assets/hero-2k.webp">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icon-192.png" sizes="192x192">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="stylesheet" href="atlas-infinity.css">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"ATLAS","url":"https://atlas-emotion.fr/","description":"Expérience immersive d’intelligence émotionnelle.","inLanguage":"fr-FR"}</script>
+</head>
+<body data-atlas-state="presence">
+  <a class="skip-link" href="#main">Aller au contenu</a>
+  <div class="boot" id="boot" aria-hidden="true">
+    <img src="assets/atlas-logo-hero-transparent.png" alt="">
+    <div class="boot-sigil"><span></span><span></span><span></span></div>
+    <p>Ouverture du sanctuaire</p>
+  </div>
+
+  <canvas id="atlas-world" aria-hidden="true"></canvas>
+  <div class="atlas-aura" aria-hidden="true"></div>
+  <div class="atlas-grain" aria-hidden="true"></div>
+  <div class="atlas-progress" aria-hidden="true"><span></span></div>
+
+  <header class="site-header" id="site-header">
+    <a class="brand" href="#hero" aria-label="ATLAS, retour à l’accueil">
+      <img src="assets/atlas-logo-hero-transparent.png" alt="ATLAS — Intelligence émotionnelle">
+    </a>
+    <nav aria-label="Navigation principale">
+      <a href="#experience">Expérience</a>
+      <a href="#comprendre">Comprendre</a>
+      <a href="#apaiser">Apaiser</a>
+      <a href="#evoluer">Évoluer</a>
+      <a href="#humain">Humain</a>
+    </nav>
+    <button class="header-cta magnetic" data-open-journey>Entrer dans ATLAS <span>↗</span></button>
+    <button class="menu-toggle" id="menu-toggle" aria-label="Ouvrir le menu" aria-expanded="false"><span></span><span></span></button>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="hero" aria-labelledby="hero-title">
+      <div class="hero-architecture" aria-hidden="true">
+        <div class="arch arch-a"></div><div class="arch arch-b"></div><div class="arch arch-c"></div><div class="floor-grid"></div>
+      </div>
+      <div class="hero-subject" aria-hidden="true">
+        <picture><source media="(min-width:1600px)" srcset="assets/neural-bust-square.webp"><img src="assets/neural-bust-square.webp" alt=""></picture>
+        <div class="subject-halo halo-a"></div><div class="subject-halo halo-b"></div><div class="subject-core"></div><div class="subject-reflection"></div>
+      </div>
+      <div class="hero-copy">
+        <p class="eyebrow">Présence émotionnelle augmentée</p>
+        <h1 id="hero-title" class="kinetic-title"><span>L’intelligence</span><span>émotionnelle</span><span class="gradient">réinventée.</span></h1>
+        <p class="hero-lead">ATLAS est un espace vivant qui vous aide à comprendre, apaiser et transformer ce que vous ressentez, sans jugement et sans précipitation.</p>
+        <div class="hero-actions"><button class="primary magnetic" data-open-journey>Commencer le voyage <span>→</span></button><a class="ghost magnetic" href="#experience">Découvrir l’expérience <span>↓</span></a></div>
+      </div>
+      <aside class="hero-presence" aria-label="Principe de l’expérience"><span class="pulse-dot"></span><div><small>Présence active</small><p>ATLAS reste là,<br>à votre rythme.</p></div></aside>
+      <div class="hero-mantra" aria-hidden="true"><span>Comprendre</span><span>Apaiser</span><span>Transformer</span></div>
+      <div class="scroll-cue" aria-hidden="true"><i></i><small>Défiler pour entrer</small></div>
+    </section>
+
+    <section class="experience" id="experience" aria-labelledby="experience-title">
+      <div class="experience-sticky">
+        <div class="experience-portrait" aria-hidden="true"><img src="assets/neural-bust-square.webp" alt=""><div class="portrait-light"></div><div class="portrait-ring ring-1"></div><div class="portrait-ring ring-2"></div><div class="portrait-ring ring-3"></div></div>
+        <div class="experience-copy"><p class="eyebrow">01 — L’expérience</p><h2 id="experience-title">Le site ne défile pas.<br><span>Il se transforme.</span></h2><p>Chaque étape modifie la lumière, la profondeur et le rythme du monde ATLAS. L’interface se révèle uniquement au moment où elle devient utile.</p></div>
+        <ol class="experience-chapters" aria-label="Chapitres de l’expérience"><li class="active" data-scene="presence"><span>01</span><div><h3>Présence</h3><p>Une entrée calme et magnétique.</p></div></li><li data-scene="clarity"><span>02</span><div><h3>Clarté</h3><p>Les connexions se structurent.</p></div></li><li data-scene="calm"><span>03</span><div><h3>Apaisement</h3><p>Le mouvement ralentit et s’ouvre.</p></div></li><li data-scene="movement"><span>04</span><div><h3>Mouvement</h3><p>Une action concrète émerge.</p></div></li></ol>
+        <div class="scene-number" aria-hidden="true">01</div>
+      </div>
+    </section>
+
+    <section class="understand" id="comprendre" aria-labelledby="understand-title">
+      <div class="section-heading reveal"><p class="eyebrow">02 — Comprendre</p><h2 id="understand-title">Qu’est-ce qui prend le plus de place en vous maintenant&nbsp;?</h2><p>Une seule question, puis une réponse adaptée. Vous pouvez changer de mot à tout moment.</p></div>
+      <div class="emotion-constellation" role="list" aria-label="Choix émotionnels">
+        <button class="emotion-node magnetic reveal" data-emotion="Tension"><i></i><strong>Tension</strong><small>Mon corps reste en alerte</small></button>
+        <button class="emotion-node magnetic reveal" data-emotion="Confusion"><i></i><strong>Confusion</strong><small>Je n’arrive pas à trier</small></button>
+        <button class="emotion-node magnetic reveal" data-emotion="Fatigue"><i></i><strong>Fatigue</strong><small>Je manque d’énergie</small></button>
+        <button class="emotion-node magnetic reveal" data-emotion="Colère"><i></i><strong>Colère</strong><small>Quelque chose déborde</small></button>
+        <button class="emotion-node magnetic reveal" data-emotion="Vide"><i></i><strong>Vide</strong><small>Je ressens peu de choses</small></button>
+        <button class="emotion-node magnetic reveal" data-emotion="Je ne sais pas"><i></i><strong>Je ne sais pas</strong><small>Commençons sans étiquette</small></button>
+      </div>
+      <div class="emotion-feedback" id="emotion-feedback" aria-live="polite">Choisissez simplement ce qui se rapproche le plus de votre état.</div>
+    </section>
+
+    <section class="calm" id="apaiser" aria-labelledby="calm-title">
+      <div class="calm-copy reveal"><p class="eyebrow">03 — Apaiser</p><h2 id="calm-title">Le calme devient une matière.</h2><p>La respiration agit sur toute la scène. Les particules, les halos et la profondeur suivent un rythme lent, sans rupture visuelle.</p><button class="primary magnetic" id="breath-start">Lancer une respiration guidée <span>→</span></button></div>
+      <div class="breath-world reveal" aria-label="Respiration guidée"><div class="breath-shell shell-a"></div><div class="breath-shell shell-b"></div><div class="breath-shell shell-c"></div><div class="breath-core" id="breath-core"><span id="breath-phase">Prêt</span><strong id="breath-seconds">60</strong><small>secondes</small></div><div class="breath-caption" id="breath-caption">Respiration cohérente</div></div>
+    </section>
+
+    <section class="evolve" id="evoluer" aria-labelledby="evolve-title">
+      <div class="trajectory-world" aria-hidden="true"><svg viewBox="0 0 1200 540" preserveAspectRatio="none"><path id="trajectory-path" d="M20 450 C190 440 250 190 420 270 S680 450 820 225 S1020 70 1180 115"/></svg><div class="trajectory-orb"></div><div class="trajectory-glow"></div></div>
+      <div class="evolve-copy reveal"><p class="eyebrow">04 — Évoluer</p><h2 id="evolve-title">Vous n’êtes pas un score.<br><span>Vous êtes un mouvement.</span></h2><p>ATLAS compare uniquement ce que vous avez déclaré. Rien n’est inventé, rien n’est imposé. Votre progression reste lisible et sous votre contrôle.</p><div class="evolve-values"><div><small>Avant</small><strong>8/10</strong><span>Tension déclarée</span></div><i>→</i><div><small>Après</small><strong>5/10</strong><span>Ressenti déclaré</span></div></div></div>
+    </section>
+
+    <section class="human" id="humain" aria-labelledby="human-title">
+      <div class="human-light" aria-hidden="true"></div>
+      <div class="human-copy reveal"><p class="eyebrow">05 — Humain</p><h2 id="human-title">La technologie accompagne.<br><span>L’humain demeure.</span></h2><p>Quand la situation le demande, ATLAS rend l’aide humaine évidente, accessible et digne — sans dramatisation et sans promesse trompeuse.</p><button class="primary magnetic" data-open-contact>Découvrir le relais humain <span>→</span></button></div>
+      <div class="human-orbit reveal" aria-hidden="true"><span></span><span></span><span></span><span></span><p>Présence disponible</p></div>
+    </section>
+
+    <section class="manifesto" aria-labelledby="manifesto-title">
+      <img src="assets/atlas-logo-hero-transparent.png" alt="ATLAS — Intelligence émotionnelle" class="manifesto-logo reveal"><p class="eyebrow reveal">Une expérience au service de l’humain</p><h2 id="manifesto-title" class="reveal">ATLAS n’est pas une machine à laquelle on parle.<br><span>C’est un espace dans lequel on se sent prêt à parler.</span></h2><button class="primary magnetic reveal" data-open-journey>Entrer dans ATLAS <span>→</span></button>
+    </section>
+  </main>
+
+  <footer><img src="assets/atlas-logo-hero-transparent.png" alt="ATLAS"><p>© 2026 ATLAS — Expérience immersive d’intelligence émotionnelle.</p><nav aria-label="Pied de page"><a href="#experience">Expérience</a><a href="#humain">Humain</a><a href="confidentialite.html">Confidentialité</a></nav></footer>
+
+  <dialog id="journey-dialog" class="modal"><button class="modal-close" data-close-journey aria-label="Fermer">×</button><div class="modal-aura"></div><img src="assets/atlas-logo-hero-transparent.png" alt="ATLAS"><div class="journey-step active" data-step="1"><p class="eyebrow">Commencer</p><h2>Comment vous sentez-vous maintenant&nbsp;?</h2><div class="modal-options"><button data-journey-emotion="Sous tension">Sous tension</button><button data-journey-emotion="Perdu">Perdu</button><button data-journey-emotion="Fatigué">Fatigué</button><button data-journey-emotion="Je ne sais pas">Je ne sais pas</button></div></div><div class="journey-step" data-step="2"><p class="eyebrow">Intensité déclarée</p><h2>À quel niveau est-ce présent&nbsp;?</h2><label class="range-wrap"><input id="intensity" type="range" min="1" max="10" value="6"><output id="intensity-output">6/10</output></label><button class="primary" id="journey-next">Continuer <span>→</span></button></div><div class="journey-step" data-step="3"><p class="eyebrow">Présence</p><h2 id="journey-result-title">Merci.</h2><p id="journey-result-copy"></p><button class="primary" data-close-journey>Fermer</button></div></dialog>
+  <dialog id="contact-dialog" class="modal compact"><button class="modal-close" data-close-contact aria-label="Fermer">×</button><p class="eyebrow">Relais humain</p><h2>Un accompagnement humain doit rester simple à rejoindre.</h2><p>Cette version présente l’interface. Le futur service précisera les disponibilités, les compétences, les délais et les conditions de contact.</p><button class="primary" data-close-contact>Compris</button></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js" defer></script>
+  <script type="module" src="atlas-infinity.js"></script>
+</body>
+</html>
