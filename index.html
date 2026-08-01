@@ -3,244 +3,67 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#03030b">
+  <meta name="theme-color" content="#040806">
   <meta name="color-scheme" content="dark">
-  <title>ATLAS — L’intelligence émotionnelle réinventée</title>
-  <meta name="description" content="ATLAS est un sanctuaire numérique d’intelligence émotionnelle pour comprendre, apaiser et transformer ce que vous ressentez.">
-  <link rel="canonical" href="https://atlas-emotion.fr/">
+  <title>ATLAS — L’intelligence artificielle au service de l’humain</title>
+  <meta name="description" content="ATLAS utilise l’intelligence artificielle comme aide et support émotionnel, avec un relais humain clairement accessible.">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="ATLAS — L’intelligence émotionnelle réinventée">
-  <meta property="og:description" content="Un sanctuaire numérique pour comprendre, apaiser et transformer ce que vous ressentez.">
+  <meta property="og:title" content="ATLAS — L’IA au service de l’humain">
+  <meta property="og:description" content="Comprendre, apaiser et rejoindre une aide humaine lorsque cela compte.">
   <meta property="og:image" content="assets/hero-2k.webp">
-  <meta name="twitter:card" content="summary_large_image">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon-192.png" sizes="192x192">
-  <link rel="apple-touch-icon" href="assets/icon-192.png">
-  <link rel="stylesheet" href="styles.css">
-  <script type="application/ld+json">
-  {
-    "@context":"https://schema.org",
-    "@type":"WebSite",
-    "name":"ATLAS",
-    "url":"https://atlas-emotion.fr/",
-    "description":"Sanctuaire numérique d’intelligence émotionnelle.",
-    "inLanguage":"fr-FR"
-  }
-  </script>
+  <link rel="stylesheet" href="atlas-system.css">
 </head>
-<body>
-  <a class="skip-link" href="#contenu">Aller au contenu</a>
+<body data-page="accueil" data-scene="home">
+  <a class="skip-link" href="#content">Aller au contenu</a>
+  <div class="boot" data-boot aria-hidden="true"><img src="assets/atlas-logo-hero-transparent.png" alt=""><span></span><p>Ouverture d’ATLAS</p></div>
+  <canvas class="scene-canvas" data-atlas-scene aria-hidden="true"></canvas>
+  <div class="atmosphere" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="pointer-aura" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="journey-progress" aria-hidden="true"><span></span></div>
 
-  <div class="loader" id="loader" aria-hidden="true">
-    <img src="assets/atlas-logo-hero-transparent.png" alt="">
-    <div class="loader-line"><span></span></div>
-  </div>
-
-  <div class="cursor-aura" aria-hidden="true"></div>
-  <canvas id="neural-field" aria-hidden="true"></canvas>
-
-  <header class="floating-header" id="floating-header">
-    <a class="floating-brand" href="#accueil" aria-label="ATLAS, accueil">
-      <img src="assets/atlas-logo-hero-transparent.png" alt="ATLAS — Intelligence émotionnelle">
-    </a>
+  <header class="site-header" data-header>
+    <a class="brand" href="index.html" aria-label="ATLAS, accueil"><img src="assets/atlas-logo-hero-transparent.png" alt="ATLAS — Intelligence émotionnelle"></a>
     <nav aria-label="Navigation principale">
-      <a href="#explorer">Explorer</a>
-      <a href="#comprendre">Comprendre</a>
-      <a href="#apaiser">Apaiser</a>
-      <a href="#evoluer">Évoluer</a>
-      <a href="#humain">Professionnels</a>
+      <a href="commencer.html">Commencer</a><a href="comprendre.html">Comprendre</a><a href="apaiser.html">Apaiser</a><a href="relais-humain.html">Relais humain</a>
     </nav>
-    <button class="header-cta" data-open-journey>Commencer</button>
-    <button class="menu-toggle" id="menu-toggle" aria-label="Ouvrir le menu" aria-expanded="false"><span></span><span></span></button>
+    <a class="header-cta magnetic" href="commencer.html">Entrer dans ATLAS <span>↗</span></a>
+    <button class="menu-toggle" data-menu aria-label="Ouvrir le menu" aria-expanded="false"><span></span><span></span></button>
   </header>
 
-  <main id="contenu">
-    <section class="hero" id="accueil" aria-labelledby="hero-title">
-      <div class="hero-backdrop" aria-hidden="true"></div>
-      <picture class="hero-art" aria-hidden="true">
-        <source media="(min-width:2600px)" srcset="assets/hero-8k.webp">
-        <source media="(min-width:1500px)" srcset="assets/hero-4k.webp">
-        <img id="hero-image" src="assets/hero-2k.webp" alt="">
-      </picture>
-      <div class="hero-vignette" aria-hidden="true"></div>
-      <div class="hero-pulse pulse-one" aria-hidden="true"></div>
-      <div class="hero-pulse pulse-two" aria-hidden="true"></div>
-
-      <div class="hero-semantics">
-        <h1 id="hero-title">L’intelligence émotionnelle réinventée</h1>
-        <p>ATLAS est un sanctuaire numérique pour comprendre, apaiser et transformer ce que vous ressentez.</p>
+  <main id="content" class="page page-home">
+    <section class="hero-shell" aria-labelledby="hero-title">
+      <div class="architecture" aria-hidden="true"><span class="arch arch-1"></span><span class="arch arch-2"></span><span class="arch arch-3"></span><span class="axis"></span></div>
+      <div class="subject-layer" aria-hidden="true">
+        <picture><source media="(min-width:2200px)" srcset="assets/hero-8k.webp"><source media="(min-width:1300px)" srcset="assets/hero-4k.webp"><img src="assets/neural-bust-square.webp" alt=""></picture>
+        <span class="subject-halo halo-one"></span><span class="subject-halo halo-two"></span><span class="subject-light"></span>
       </div>
-
-      <nav class="hotspot-layer desktop-hotspots" aria-label="Navigation immersive">
-        <a class="hotspot top-home" href="#accueil" aria-label="Accueil"></a>
-        <a class="hotspot top-explore" href="#explorer" aria-label="Explorer"></a>
-        <a class="hotspot top-about" href="#vision" aria-label="À propos"></a>
-        <a class="hotspot top-resources" href="#ressources" aria-label="Ressources"></a>
-        <a class="hotspot top-pro" href="#humain" aria-label="Professionnels"></a>
-        <button class="hotspot top-account" data-open-journey aria-label="Ouvrir l’espace personnel"></button>
-        <button class="hotspot hero-cta-hotspot" data-open-journey aria-label="Commencer le voyage"></button>
-        <a class="hotspot side-understand" href="#comprendre" aria-label="Comprendre"></a>
-        <a class="hotspot side-calm" href="#apaiser" aria-label="Apaiser"></a>
-        <a class="hotspot side-transform" href="#evoluer" aria-label="Transformer"></a>
-        <a class="hotspot bottom-talk" href="#comprendre" aria-label="Parler librement"></a>
-        <a class="hotspot bottom-understand" href="#comprendre" aria-label="Comprendre"></a>
-        <a class="hotspot bottom-calm" href="#apaiser" aria-label="Apaiser"></a>
-        <a class="hotspot bottom-evolve" href="#evoluer" aria-label="Évoluer"></a>
-        <a class="hotspot bottom-human" href="#humain" aria-label="Soutien humain"></a>
-      </nav>
-
-      <div class="mobile-hero" aria-hidden="false">
-        <img class="mobile-logo" src="assets/atlas-logo-hero-transparent.png" alt="ATLAS — Intelligence émotionnelle">
-        <div class="mobile-copy">
-          <p class="eyebrow">Sanctuaire numérique</p>
-          <h1>L’intelligence émotionnelle <span>réinventée</span></h1>
-          <p>Comprendre, apaiser et transformer ce que vous ressentez, dans un espace confidentiel et profondément humain.</p>
-          <button class="primary-action" data-open-journey>Commencer le voyage <span>→</span></button>
-        </div>
-        <div class="mobile-orbit" aria-hidden="true"></div>
+      <div class="hero-copy">
+        <p class="eyebrow">Intelligence émotionnelle augmentée</p>
+        <h1 id="hero-title"><span>L’intelligence artificielle,</span><strong>au service de l’humain.</strong></h1>
+        <p class="hero-lead">ATLAS vous aide à mettre des mots sur ce que vous ressentez, à retrouver du calme et à rejoindre une présence humaine lorsque vous en avez besoin.</p>
+        <div class="hero-actions"><a class="primary magnetic" href="commencer.html">Commencer avec ATLAS <span>→</span></a><a class="secondary magnetic" href="relais-humain.html">Découvrir le relais humain</a></div>
+        <div class="trust-line"><span><i></i>Écoute sans jugement</span><span><i></i>Données locales dans ce prototype</span><span><i></i>L’humain reste prioritaire</span></div>
       </div>
-
-      <div class="scroll-cue" aria-hidden="true"><span></span><small>Défiler pour explorer</small></div>
+      <aside class="mission-rail" aria-label="Les trois fonctions principales">
+        <article><span>01</span><div><h2>Comprendre</h2><p>Clarifier ce qui se passe en vous.</p></div></article>
+        <article><span>02</span><div><h2>Apaiser</h2><p>Retrouver un rythme plus stable.</p></div></article>
+        <article><span>03</span><div><h2>Relier</h2><p>Accéder à une aide humaine sans friction.</p></div></article>
+      </aside>
+      <div class="scroll-cue" aria-hidden="true"><span></span><small>Chaque étape possède son propre monde</small></div>
     </section>
 
-    <section class="story-stage" id="explorer" aria-labelledby="explorer-title">
-      <div class="story-media" aria-hidden="true">
-        <img src="assets/neural-bust-square.webp" alt="">
-        <div class="story-halo"></div>
-      </div>
-      <div class="story-content reveal">
-        <p class="eyebrow">01 — Présence</p>
-        <h2 id="explorer-title">Votre monde intérieur mérite plus qu’une réponse automatique.</h2>
-        <p>ATLAS transforme l’interface en présence. La lumière, le mouvement et le rythme évoluent avec la session, sans jamais prétendre diagnostiquer ce que vous vivez.</p>
-        <div class="story-metrics" aria-label="Principes de l’expérience">
-          <span><strong>1</strong> question à la fois</span>
-          <span><strong>0</strong> jugement</span>
-          <span><strong>100%</strong> contrôle utilisateur</span>
-        </div>
-      </div>
-      <div class="scroll-rail" aria-hidden="true"><span></span></div>
-    </section>
-
-    <section class="experience-section" id="comprendre" aria-labelledby="checkin-title">
-      <div class="section-heading reveal">
-        <p class="eyebrow">02 — Comprendre</p>
-        <h2 id="checkin-title">Qu’est-ce qui prend le plus de place en vous maintenant&nbsp;?</h2>
-        <p>Choisissez un point de départ. Vous pourrez le modifier à tout moment.</p>
-      </div>
-      <div class="emotion-grid" role="list" aria-label="Choix émotionnels">
-        <button class="emotion-card reveal" data-emotion="Tension"><i></i><span>Tension</span><small>Mon corps reste en alerte</small></button>
-        <button class="emotion-card reveal" data-emotion="Confusion"><i></i><span>Confusion</span><small>Je n’arrive pas à trier</small></button>
-        <button class="emotion-card reveal" data-emotion="Fatigue"><i></i><span>Fatigue</span><small>Je n’ai plus d’énergie</small></button>
-        <button class="emotion-card reveal" data-emotion="Colère"><i></i><span>Colère</span><small>Quelque chose déborde</small></button>
-        <button class="emotion-card reveal" data-emotion="Vide"><i></i><span>Vide</span><small>Je ne ressens presque rien</small></button>
-        <button class="emotion-card reveal" data-emotion="Je ne sais pas"><i></i><span>Je ne sais pas</span><small>Commençons sans étiquette</small></button>
-      </div>
-      <div class="emotion-response" id="emotion-response" aria-live="polite"></div>
-    </section>
-
-    <section class="calm-section" id="apaiser" aria-labelledby="calm-title">
-      <div class="calm-copy reveal">
-        <p class="eyebrow">03 — Apaiser</p>
-        <h2 id="calm-title">Le calme n’est pas un décor. C’est une interaction.</h2>
-        <p>Le rythme visuel se synchronise avec une respiration lente. L’expérience peut être interrompue instantanément et s’adapte automatiquement au réglage de mouvement de votre appareil.</p>
-        <button class="secondary-action" id="breath-toggle">Lancer 60 secondes</button>
-      </div>
-      <div class="breath-engine reveal" aria-label="Guide respiratoire">
-        <div class="breath-orbit orbit-a"></div>
-        <div class="breath-orbit orbit-b"></div>
-        <div class="breath-core" id="breath-core"><span id="breath-label">Prêt</span><strong id="breath-count">60</strong></div>
-        <div class="breath-caption" id="breath-caption">Respiration cohérente</div>
-      </div>
-    </section>
-
-    <section class="evolve-section" id="evoluer" aria-labelledby="evolve-title">
-      <div class="evolve-visual reveal" aria-hidden="true">
-        <div class="trajectory"><span></span><span></span><span></span><span></span><span></span></div>
-        <div class="evolve-glow"></div>
-      </div>
-      <div class="evolve-copy reveal">
-        <p class="eyebrow">04 — Évoluer</p>
-        <h2 id="evolve-title">Mesurez uniquement ce que vous avez réellement déclaré.</h2>
-        <p>ATLAS ne fabrique aucune donnée biométrique. La progression compare vos propres ressentis avant et après une session, avec une mémoire optionnelle et révocable.</p>
-        <div class="before-after">
-          <div><small>Avant</small><strong>8/10</strong><span>Tension déclarée</span></div>
-          <i aria-hidden="true">→</i>
-          <div><small>Après</small><strong>5/10</strong><span>État déclaré</span></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="resources-section" id="ressources" aria-labelledby="resources-title">
-      <div class="section-heading reveal">
-        <p class="eyebrow">Ressources</p>
-        <h2 id="resources-title">Des outils courts, précis et activables au bon moment.</h2>
-      </div>
-      <div class="resource-grid">
-        <article class="resource-card reveal"><span>03 min</span><h3>Recentrage immédiat</h3><p>Revenir à ce qui est concret lorsque les pensées s’accélèrent.</p><button data-resource="Recentrage immédiat">Ouvrir →</button></article>
-        <article class="resource-card reveal"><span>07 min</span><h3>Décharge mentale</h3><p>Sortir les pensées de la boucle sans chercher à tout résoudre.</p><button data-resource="Décharge mentale">Ouvrir →</button></article>
-        <article class="resource-card reveal"><span>10 min</span><h3>Préparer une conversation</h3><p>Clarifier le besoin, la limite et le message avant de parler.</p><button data-resource="Préparer une conversation">Ouvrir →</button></article>
-      </div>
-    </section>
-
-    <section class="human-section" id="humain" aria-labelledby="human-title">
-      <div class="human-light" aria-hidden="true"></div>
-      <div class="human-content reveal">
-        <p class="eyebrow">05 — Soutien humain</p>
-        <h2 id="human-title">La technologie accompagne. L’humain reste irremplaçable.</h2>
-        <p>Lorsque la situation le demande, ATLAS doit pouvoir orienter clairement vers un proche, un professionnel ou une ressource d’urgence adaptée — sans dramatisation ni promesse trompeuse.</p>
-        <button class="primary-action" data-open-contact>Découvrir le relais humain <span>→</span></button>
-      </div>
-    </section>
-
-    <section class="vision-section" id="vision" aria-labelledby="vision-title">
-      <img src="assets/atlas-logo-hero-transparent.png" alt="ATLAS — Intelligence émotionnelle" class="vision-logo reveal">
-      <h2 id="vision-title" class="reveal">Comprendre. Apaiser. Transformer.</h2>
-      <p class="reveal">Une expérience d’intelligence émotionnelle conçue pour renforcer votre propre capacité à avancer.</p>
+    <section class="system-manifest" aria-labelledby="manifest-title">
+      <div class="manifest-copy reveal"><p class="eyebrow">Un écosystème, pas une page</p><h2 id="manifest-title">Chaque scène est indépendante.<br><span>Toutes communiquent intelligemment.</span></h2><p>Le décor, la lumière, les synapses, la présence centrale et l’interface sont pilotés séparément. Votre parcours transmet uniquement les choix nécessaires à la scène suivante.</p></div>
+      <div class="layer-map reveal" aria-label="Architecture multicouche"><span>Interface</span><span>Présence humaine</span><span>Réseau IA</span><span>Atmosphère</span><span>Architecture</span></div>
+      <a class="next-portal magnetic" href="commencer.html"><small>Première étape</small><strong>Entrer dans le sanctuaire</strong><span>→</span></a>
     </section>
   </main>
 
-  <footer>
-    <div><img src="assets/atlas-logo-hero-transparent.png" alt="ATLAS"><p>© 2026 ATLAS. Prototype d’expérience front-end.</p></div>
-    <nav aria-label="Pied de page"><a href="#vision">À propos</a><a href="#ressources">Ressources</a><a href="#humain">Professionnels</a><a href="confidentialite.html">Confidentialité</a></nav>
-  </footer>
-
-  <dialog class="journey-dialog" id="journey-dialog">
-    <button class="dialog-close" data-close-dialog aria-label="Fermer">×</button>
-    <div class="dialog-glow" aria-hidden="true"></div>
-    <img src="assets/atlas-logo-hero-transparent.png" alt="ATLAS" class="dialog-logo">
-    <div class="dialog-step active" data-step="1">
-      <p class="eyebrow">Commencer le voyage</p>
-      <h2>Comment vous sentez-vous maintenant&nbsp;?</h2>
-      <div class="dialog-options">
-        <button data-dialog-emotion="Sous tension">Sous tension</button>
-        <button data-dialog-emotion="Perdu">Perdu</button>
-        <button data-dialog-emotion="Fatigué">Fatigué</button>
-        <button data-dialog-emotion="Je ne sais pas">Je ne sais pas</button>
-      </div>
-    </div>
-    <div class="dialog-step" data-step="2">
-      <p class="eyebrow">Intensité déclarée</p>
-      <h2>À quel niveau est-ce présent&nbsp;?</h2>
-      <label class="range-wrap"><input id="intensity-range" type="range" min="1" max="10" value="6"><output id="intensity-output">6/10</output></label>
-      <button class="primary-action" id="dialog-next">Continuer <span>→</span></button>
-    </div>
-    <div class="dialog-step" data-step="3">
-      <p class="eyebrow">Point de départ</p>
-      <h2 id="dialog-result-title">Merci. Commençons doucement.</h2>
-      <p id="dialog-result-copy">ATLAS vous proposera une seule question à la fois, sans imposer d’interprétation.</p>
-      <button class="primary-action" data-close-dialog>Entrer dans ATLAS <span>→</span></button>
-    </div>
-  </dialog>
-
-  <dialog class="contact-dialog" id="contact-dialog">
-    <button class="dialog-close" data-close-contact aria-label="Fermer">×</button>
-    <p class="eyebrow">Relais humain</p>
-    <h2>Parler à une personne.</h2>
-    <p>Cette démonstration ne transmet aucune donnée. La version de production intégrera un relais humain sécurisé, des consentements explicites et des ressources officielles selon le pays.</p>
-    <button class="primary-action" data-close-contact>Compris <span>→</span></button>
-  </dialog>
-
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js" defer></script>
+  <footer><img src="assets/atlas-logo-hero-transparent.png" alt="ATLAS"><p>Prototype maître — l’IA comme aide, l’humain comme priorité.</p><a href="confidentialite.html">Confidentialité</a></footer>
+  <div class="toast" data-toast role="status" aria-live="polite"></div>
+  <script type="module" src="atlas-core.js"></script>
 </body>
 </html>
