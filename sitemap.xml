@@ -1,2 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://atlas-emotion.fr/</loc></url><url><loc>https://atlas-emotion.fr/confidentialite.html</loc></url></urlset>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://atlas-emotion.fr/</loc></url>
+  <url><loc>https://atlas-emotion.fr/commencer</loc></url>
+  <url><loc>https://atlas-emotion.fr/parler-a-atlas</loc></url>
+  <url><loc>https://atlas-emotion.fr/comprendre</loc></url>
+  <url><loc>https://atlas-emotion.fr/apaiser</loc></url>
+  <url><loc>https://atlas-emotion.fr/evoluer</loc></url>
+  <url><loc>https://atlas-emotion.fr/ressources</loc></url>
+  <url><loc>https://atlas-emotion.fr/relais-humain</loc></url>
+  <url><loc>https://atlas-emotion.fr/professionnels</loc></url>
+  <url><loc>https://atlas-emotion.fr/confidentialite</loc></url>
+  <url><loc>https://atlas-emotion.fr/aide-urgente</loc></url>
+</urlset>
