@@ -1,10 +1,12 @@
 {
-  "name":"ATLAS — Intelligence émotionnelle",
+  "name":"ATLAS — Intelligence artificielle au service de l’humain",
   "short_name":"ATLAS",
+  "description":"Une aide numérique pour comprendre, apaiser et rejoindre une présence humaine.",
   "start_url":"./",
+  "scope":"./",
   "display":"standalone",
-  "background_color":"#03030a",
-  "theme_color":"#03030a",
+  "background_color":"#030806",
+  "theme_color":"#030806",
   "lang":"fr-FR",
   "icons":[
     {"src":"assets/icon-192.png","sizes":"192x192","type":"image/png"},
