@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./audience.css";
 import "./conversation.css";
+import "./journey.css";
 
 export const metadata: Metadata = {
   title: "ATLAS — Intelligence émotionnelle vivante",
