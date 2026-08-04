@@ -5,7 +5,9 @@ import { Awakening } from "../components/atlas/Awakening";
 import { AudienceSelector, AUDIENCE_LABELS } from "../components/atlas/AudienceSelector";
 import { CellRegistryView } from "../components/atlas/CellRegistryView";
 import { ConversationSession } from "../components/atlas/ConversationSession";
+import { GuidedJourney } from "../components/atlas/GuidedJourney";
 import { Presence } from "../components/atlas/Presence";
+import { clearAtlasEvents } from "../lib/atlas/analytics";
 import { selectCells } from "../lib/atlas/cells";
 import { clearPreferences, readPreferences, writePreferences } from "../lib/atlas/persistence";
 import { atlasReducer } from "../lib/atlas/reducer";
@@ -42,7 +44,8 @@ export default function Home() {
 
   useEffect(() => {
     if (!hydrated) return;
-    writePreferences(runtime);
+    if (runtime.memoryConsent) writePreferences(runtime);
+    else clearPreferences();
   }, [hydrated, runtime.audience, runtime.calmMode, runtime.memoryConsent]);
 
   useEffect(() => {
@@ -76,6 +79,14 @@ export default function Home() {
     if (phase === "vigilance") dispatch({ type: "SAFETY_ALERT" });
   }
 
+  function eraseAllLocalData() {
+    clearPreferences();
+    clearAtlasEvents();
+    window.localStorage.removeItem(VISIT_KEY);
+    setReturning(false);
+    dispatch({ type: "RESET_SESSION" });
+  }
+
   const className = ["atlas", runtime.calmMode ? "calm" : "", `audience-${runtime.audience}`].filter(Boolean).join(" ");
 
   return (
@@ -83,7 +94,7 @@ export default function Home() {
       <div className="ambient" aria-hidden="true"><div className="mist mist-a" /><div className="mist mist-b" /><div className="grid-field" /></div>
       <header className="topbar">
         <a className="brand" href="#home" aria-label="ATLAS, accueil"><span className="brand-mark">A</span><span><strong>ATLAS</strong><small>INTELLIGENCE ÉMOTIONNELLE VIVANTE</small></span></a>
-        <nav aria-label="Navigation principale"><a href="#home">Accueil</a><a href="#session">Session</a><a href="#univers">Univers</a><a href="#cells">Cellules</a><a href="#trust">Confiance</a></nav>
+        <nav aria-label="Navigation principale"><a href="#home">Accueil</a><a href="#session">Session</a><a href="#journey">Parcours</a><a href="#univers">Univers</a><a href="#cells">Cellules</a><a href="#trust">Confiance</a></nav>
         <button className="quiet-button" onClick={() => dispatch({ type: "CALM_MODE_SET", enabled: !runtime.calmMode })}>{runtime.calmMode ? "Réactiver la présence" : "Mode calme"}</button>
       </header>
 
@@ -103,7 +114,11 @@ export default function Home() {
           </section>
 
           <div id="session" className="section">
-            <ConversationSession audience={runtime.audience} onPhase={setConversationPhase} />
+            <ConversationSession audience={runtime.audience} analyticsConsent={runtime.memoryConsent} onPhase={setConversationPhase} />
+          </div>
+
+          <div id="journey" className="section">
+            <GuidedJourney audience={runtime.audience} analyticsConsent={runtime.memoryConsent} />
           </div>
 
           <section className="section" id="univers">
@@ -117,9 +132,9 @@ export default function Home() {
           </section>
 
           <section className="section trust" id="trust">
-            <p className="kicker">MÉMOIRE SOUS CONSENTEMENT</p><h2>Les préférences peuvent être conservées. Le contenu sensible ne l’est pas.</h2>
-            <p className="lead">Univers, mode calme et choix de mémoire sont stockés localement. Les paroles saisies ne sont pas persistées par ce socle.</p>
-            <div className="composer-actions"><button onClick={() => dispatch({ type: "MEMORY_CONSENT_SET", enabled: !runtime.memoryConsent })}>{runtime.memoryConsent ? "Désactiver la mémoire" : "Autoriser la mémoire"}</button><button onClick={() => { clearPreferences(); window.localStorage.removeItem(VISIT_KEY); setReturning(false); dispatch({ type: "RESET_SESSION" }); }}>Effacer les préférences</button></div>
+            <p className="kicker">MÉMOIRE ET MESURE SOUS CONSENTEMENT</p><h2>Sans autorisation, aucune préférence ni mesure locale n’est conservée.</h2>
+            <p className="lead">Lorsque la mémoire est autorisée, ATLAS conserve uniquement l’univers, le mode calme et des événements techniques sans texte libre. Tout peut être effacé immédiatement.</p>
+            <div className="composer-actions"><button onClick={() => dispatch({ type: "MEMORY_CONSENT_SET", enabled: !runtime.memoryConsent })}>{runtime.memoryConsent ? "Retirer le consentement" : "Autoriser mémoire et mesure"}</button><button onClick={eraseAllLocalData}>Effacer toutes les données locales</button></div>
           </section>
         </>
       )}
