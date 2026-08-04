@@ -1,6 +1,6 @@
 {
   "name": "atlas",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "private": true,
   "engines": {
     "node": "24.x"
@@ -10,8 +10,9 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "test:runtime": "node --experimental-strip-types tests/atlas-runtime.test.ts",
     "check:architecture": "node scripts/validate-architecture.mjs",
-    "check": "npm run check:architecture && npm run typecheck && npm run build"
+    "check": "npm run check:architecture && npm run test:runtime && npm run typecheck && npm run build"
   },
   "dependencies": {
     "next": "16.2.12",
