@@ -25,7 +25,7 @@ export async function loginAction(_state: LoginState, formData: FormData): Promi
           metadata: { reason: "invalid_credentials" },
         });
       }
-      return { error: "Connexion impossible. Vérifiez les identifiants ou la configuration serveur." };
+      return { error: "Connexion impossible. Vérifiez les identifiants." };
     }
 
     await createSession(user.id);
@@ -36,16 +36,11 @@ export async function loginAction(_state: LoginState, formData: FormData): Promi
       outcome: "success",
       metadata: { role: user.role },
     });
-    redirect(user.role === "atlas_admin" ? "/administration" : "/professionnels");
-  } catch (error) {
-    if (databaseConfigured()) {
-      await writeAuditEvent({
-        action: "identity.login",
-        targetType: "session",
-        outcome: "failure",
-        metadata: { reason: "server_error" },
-      }).catch(() => undefined);
-    }
+
+    if (user.role === "atlas_admin") redirect("/administration");
+    if (user.role === "professional" || user.role === "organization_admin") redirect("/professionnels");
+    redirect("/compte");
+  } catch {
     return { error: "Le service de connexion est momentanément indisponible." };
   }
 }
