@@ -1,6 +1,6 @@
-import type { AtlasCell } from "../../lib/atlas/cells";
+import type { AtlasCellDefinition } from "../../lib/atlas/cells";
 
-export function CellRegistryView({ cells }: { cells: AtlasCell[] }) {
+export function CellRegistryView({ cells }: { cells: AtlasCellDefinition[] }) {
   return <div className="cards">{cells.map((cell) => (
     <article key={cell.id}>
       <span>{cell.durationMinutes} MIN</span><h3>{cell.title}</h3><p>{cell.purpose}</p>
