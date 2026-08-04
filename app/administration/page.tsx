@@ -3,6 +3,7 @@ import { getCommerceReadiness } from "../../lib/atlas/commerce";
 import { DEFAULT_CONSENTS, ATLAS_RETENTION_RULES } from "../../lib/atlas/governance";
 import { getIntegrationStatuses } from "../../lib/atlas/external-integrations";
 import { requireRole } from "../../lib/server/auth";
+import { getOperationsSnapshot } from "../../lib/server/operations";
 import { logoutAction } from "../connexion/actions";
 
 const commerce = getCommerceReadiness(process.env);
@@ -10,6 +11,7 @@ const integrations = getIntegrationStatuses(process.env, DEFAULT_CONSENTS);
 
 export default async function AdministrationPage() {
   const user = await requireRole(["atlas_admin"]);
+  const operations = await getOperationsSnapshot();
 
   return (
     <main className="portal-shell admin-shell">
@@ -21,10 +23,16 @@ export default async function AdministrationPage() {
       <section className="portal-hero compact">
         <p className="kicker">GOUVERNANCE / SÉCURITÉ / EXPLOITATION</p>
         <h1>Voir ce qui est actif. Bloquer ce qui ne l’est pas.</h1>
-        <p className="lead">Cette console est protégée par une session serveur et le rôle atlas_admin. Les contrôles opérationnels sensibles restent verrouillés tant que l’infrastructure et l’audit complet ne sont pas configurés.</p>
+        <p className="lead">Console réservée au rôle atlas_admin. Elle affiche uniquement des métriques techniques agrégées et ne restitue aucun texte de session.</p>
       </section>
 
       <section className="status-grid">
+        <article><span>BASE</span><strong>{operations.database ? "ACTIVE" : "ABSENTE"}</strong><small>PostgreSQL et contrôles serveur</small></article>
+        <article><span>UTILISATEURS</span><strong>{operations.activeUsers}</strong><small>{operations.activeSessions} session(s) active(s)</small></article>
+        <article><span>ORGANISATIONS</span><strong>{operations.activeOrganizations}</strong><small>{operations.activeSubscriptions} abonnement(s) actif(s)</small></article>
+        <article><span>WEBHOOKS 24 H</span><strong>{operations.failedWebhooks24h ? "ALERTE" : "STABLE"}</strong><small>{operations.failedWebhooks24h} échec(s) · {operations.pendingWebhooks} en attente</small></article>
+        <article><span>IA 24 H</span><strong>{operations.aiRuns24h}</strong><small>{operations.aiFailures24h} échec(s), sans contenu enregistré</small></article>
+        <article><span>ACCÈS REFUSÉS 24 H</span><strong>{operations.deniedActions24h}</strong><small>Événements d’audit agrégés</small></article>
         <article><span>PAIEMENTS</span><strong>{commerce.productionCheckoutEnabled ? "ACTIFS" : "BLOQUÉS"}</strong><small>{commerce.missingRequirements.join(" · ") || "configuration complète"}</small></article>
         {integrations.map((integration) => (
           <article key={integration.provider}>
