@@ -14,6 +14,8 @@ export async function loginAction(_state: LoginState, formData: FormData): Promi
   const password = String(formData.get("password") ?? "");
   if (!email || !password) return { error: "Adresse électronique et mot de passe requis." };
 
+  let destination = "/compte";
+
   try {
     const user = await authenticateWithPassword(email, password);
     if (!user) {
@@ -37,12 +39,13 @@ export async function loginAction(_state: LoginState, formData: FormData): Promi
       metadata: { role: user.role },
     });
 
-    if (user.role === "atlas_admin") redirect("/administration");
-    if (user.role === "professional" || user.role === "organization_admin") redirect("/professionnels");
-    redirect("/compte");
+    if (user.role === "atlas_admin") destination = "/administration";
+    else if (user.role === "professional" || user.role === "organization_admin") destination = "/professionnels";
   } catch {
     return { error: "Le service de connexion est momentanément indisponible." };
   }
+
+  redirect(destination);
 }
 
 export async function logoutAction(): Promise<void> {
