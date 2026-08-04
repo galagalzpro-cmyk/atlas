@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import pg from "pg";
 
 const { Client } = pg;
@@ -12,9 +12,15 @@ const client = new Client({
 
 await client.connect();
 try {
-  const sql = await readFile("database/001_foundation.sql", "utf8");
-  await client.query(sql);
-  console.log("ATLAS database migration completed.");
+  const files = (await readdir("database"))
+    .filter((file) => /^\d+_.+\.sql$/.test(file))
+    .sort();
+  for (const file of files) {
+    const sql = await readFile(`database/${file}`, "utf8");
+    await client.query(sql);
+    console.log(`Applied ${file}`);
+  }
+  console.log("ATLAS database migrations completed.");
 } finally {
   await client.end();
 }
