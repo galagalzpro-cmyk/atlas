@@ -8,8 +8,39 @@ export interface RateLimitDecision {
   retryAfterSeconds: number;
 }
 
+interface LocalWindow {
+  count: number;
+  expiresAt: number;
+}
+
+const localWindows = new Map<string, LocalWindow>();
+
 function hashKey(value: string): string {
   return createHash("sha256").update(value).digest("hex");
+}
+
+function consumeLocalRateLimit(
+  bucket: string,
+  identifier: string,
+  limit: number,
+  windowSeconds: number,
+): RateLimitDecision {
+  const now = Date.now();
+  const key = `${bucket}:${hashKey(identifier)}`;
+  const current = localWindows.get(key);
+
+  if (!current || current.expiresAt <= now) {
+    localWindows.set(key, { count: 1, expiresAt: now + windowSeconds * 1000 });
+    return { allowed: true, remaining: Math.max(0, limit - 1), retryAfterSeconds: windowSeconds };
+  }
+
+  current.count += 1;
+  localWindows.set(key, current);
+  return {
+    allowed: current.count <= limit,
+    remaining: Math.max(0, limit - current.count),
+    retryAfterSeconds: Math.max(1, Math.ceil((current.expiresAt - now) / 1000)),
+  };
 }
 
 export async function consumeRateLimit(
@@ -18,7 +49,10 @@ export async function consumeRateLimit(
   limit: number,
   windowSeconds: number,
 ): Promise<RateLimitDecision> {
-  if (!databaseConfigured()) return { allowed: false, remaining: 0, retryAfterSeconds: windowSeconds };
+  if (!databaseConfigured()) {
+    return consumeLocalRateLimit(bucket, identifier, limit, windowSeconds);
+  }
+
   const keyHash = hashKey(identifier);
   const result = await getDatabase().query<{ hit_count: number; retry_after: number }>(
     `WITH current_window AS (

@@ -1,6 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { getDatabase } from "./database";
+import { isAtlasTestMode } from "./test-mode";
 
 export type AtlasAuditOutcome = "success" | "denied" | "failure";
 
@@ -42,6 +43,7 @@ export async function writeAuditEvent(
   input: AtlasAuditInput,
   client?: PoolClient,
 ): Promise<void> {
+  if (isAtlasTestMode()) return;
   const executor = client ?? getDatabase();
   await executor.query(
     `INSERT INTO atlas_audit_events

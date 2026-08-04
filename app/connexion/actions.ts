@@ -14,6 +14,8 @@ export async function loginAction(_state: LoginState, formData: FormData): Promi
   const password = String(formData.get("password") ?? "");
   if (!email || !password) return { error: "Adresse électronique et mot de passe requis." };
 
+  let destination = "/compte";
+
   try {
     const user = await authenticateWithPassword(email, password);
     if (!user) {
@@ -25,7 +27,7 @@ export async function loginAction(_state: LoginState, formData: FormData): Promi
           metadata: { reason: "invalid_credentials" },
         });
       }
-      return { error: "Connexion impossible. Vérifiez les identifiants ou la configuration serveur." };
+      return { error: "Connexion impossible. Vérifiez les identifiants." };
     }
 
     await createSession(user.id);
@@ -36,18 +38,14 @@ export async function loginAction(_state: LoginState, formData: FormData): Promi
       outcome: "success",
       metadata: { role: user.role },
     });
-    redirect(user.role === "atlas_admin" ? "/administration" : "/professionnels");
-  } catch (error) {
-    if (databaseConfigured()) {
-      await writeAuditEvent({
-        action: "identity.login",
-        targetType: "session",
-        outcome: "failure",
-        metadata: { reason: "server_error" },
-      }).catch(() => undefined);
-    }
+
+    if (user.role === "atlas_admin") destination = "/administration";
+    else if (user.role === "professional" || user.role === "organization_admin") destination = "/professionnels";
+  } catch {
     return { error: "Le service de connexion est momentanément indisponible." };
   }
+
+  redirect(destination);
 }
 
 export async function logoutAction(): Promise<void> {
