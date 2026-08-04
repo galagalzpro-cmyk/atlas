@@ -31,6 +31,19 @@ function extractText(payload: OpenAIResponse): string | null {
   return null;
 }
 
+export async function GET() {
+  return NextResponse.json({
+    service: "atlas-core",
+    status: "ready",
+    conversation: true,
+    safety: true,
+    neuralVisualState: true,
+    externalAiConfigured: Boolean(process.env.OPENAI_API_KEY),
+    modelConfigured: Boolean(process.env.OPENAI_MODEL),
+    timestamp: new Date().toISOString(),
+  });
+}
+
 export async function POST(request: Request) {
   let body: RequestBody;
   try {
