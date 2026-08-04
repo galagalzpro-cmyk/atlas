@@ -1,4 +1,4 @@
-import type { AtlasAudience } from "./types";
+import type { AtlasAudience } from "./types.ts";
 
 export type SafetyLevel = "standard" | "attention" | "urgent";
 
@@ -37,12 +37,10 @@ export function assessSafety(text: string, audience: AtlasAudience): SafetyAsses
     if (audience === "adolescent") reasons.push("protection renforcée pour personne mineure");
     return { level: "urgent", reasons, shouldPauseGeneration: true, requiresHumanHelp: true };
   }
-
   if (ATTENTION_PATTERNS.some((pattern) => pattern.test(text))) {
     reasons.push("détresse ou exposition possible à une situation dangereuse");
     if (audience === "adolescent") reasons.push("orientation vers un adulte sûr prioritaire");
     return { level: "attention", reasons, shouldPauseGeneration: false, requiresHumanHelp: audience === "adolescent" };
   }
-
   return { level: "standard", reasons, shouldPauseGeneration: false, requiresHumanHelp: false };
 }
