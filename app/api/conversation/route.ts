@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { assessSafety } from "../../../lib/atlas/safety";
-import { buildReply } from "../../../lib/atlas/conversation";
+import { buildReply, type AtlasConversationTurn } from "../../../lib/atlas/conversation";
 import type { AtlasAudience } from "../../../lib/atlas/types";
 import { generateAtlasReply } from "../../../lib/server/ai";
 import { consumeRateLimit } from "../../../lib/server/rate-limit";
@@ -13,20 +13,34 @@ function isAudience(value: unknown): value is AtlasAudience {
   return value === "adolescent" || value === "adult" || value === "senior";
 }
 
+function parseHistory(value: unknown): AtlasConversationTurn[] {
+  if (!Array.isArray(value)) return [];
+  return value.slice(-12).flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const role = (item as { role?: unknown }).role;
+    const text = (item as { text?: unknown }).text;
+    if ((role !== "user" && role !== "assistant") || typeof text !== "string") return [];
+    const normalized = text.trim().slice(0, 1800);
+    return normalized ? [{ role, text: normalized }] : [];
+  });
+}
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as null | {
     text?: unknown;
     audience?: unknown;
     externalAiConsent?: unknown;
+    history?: unknown;
   };
   const text = typeof body?.text === "string" ? body.text.trim().slice(0, 6000) : "";
   const audience = isAudience(body?.audience) ? body.audience : "adult";
   const externalAiConsent = body?.externalAiConsent === true;
+  const history = parseHistory(body?.history);
   if (!text) return NextResponse.json({ error: "Message requis." }, { status: 400 });
 
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   const identifier = forwarded || request.headers.get("x-real-ip") || "unknown";
-  const limit = await consumeRateLimit("conversation", identifier, 20, 60);
+  const limit = await consumeRateLimit("conversation", identifier, 30, 60);
   if (!limit.allowed) {
     return NextResponse.json(
       { error: "Trop de demandes. Réessayez dans quelques instants." },
@@ -35,7 +49,7 @@ export async function POST(request: Request) {
   }
 
   const safety = assessSafety(text, audience);
-  const localReply = buildReply(text, audience, safety);
+  const localReply = buildReply(text, audience, safety, history);
   if (safety.level === "urgent" || safety.shouldPauseGeneration || !externalAiConsent || !process.env.OPENAI_API_KEY) {
     return NextResponse.json({ reply: localReply, safety, source: "local" }, { headers: { "Cache-Control": "no-store" } });
   }
