@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useReducer, useState } from "react";
+import { Awakening } from "../components/atlas/Awakening";
+import { AudienceSelector, AUDIENCE_LABELS } from "../components/atlas/AudienceSelector";
+import { CellRegistryView } from "../components/atlas/CellRegistryView";
+import { Presence } from "../components/atlas/Presence";
 import { selectCells } from "../lib/atlas/cells";
 import { clearPreferences, readPreferences, writePreferences } from "../lib/atlas/persistence";
 import { atlasReducer } from "../lib/atlas/reducer";
@@ -16,19 +20,18 @@ const STATES: Record<AtlasPresenceState, { label: string; detail: string }> = {
   vigilance: { label: "Vigilance", detail: "Les protections prioritaires sont activées" },
 };
 
-const AUDIENCE_LABELS: Record<AtlasAudience, string> = {
-  adolescent: "Adolescents",
-  adult: "Adultes",
-  senior: "Seniors",
-};
+const VISIT_KEY = "atlas.hasVisited";
 
 export default function Home() {
   const [runtime, dispatch] = useReducer(atlasReducer, INITIAL_ATLAS_STATE);
   const [text, setText] = useState("");
   const [hydrated, setHydrated] = useState(false);
+  const [returning, setReturning] = useState(false);
 
   useEffect(() => {
     const saved = readPreferences();
+    const hasVisited = window.localStorage.getItem(VISIT_KEY) === "1";
+    setReturning(hasVisited);
     if (saved) {
       dispatch({ type: "AUDIENCE_SET", audience: saved.audience });
       dispatch({ type: "MEMORY_CONSENT_SET", enabled: saved.memoryConsent });
@@ -44,22 +47,22 @@ export default function Home() {
 
   useEffect(() => {
     if (runtime.presence !== "awakening") return;
+    const cadence = returning ? 70 : 130;
     const timer = window.setInterval(() => {
-      const next = Math.min(100, runtime.awakeningProgress + Math.max(3, Math.round((100 - runtime.awakeningProgress) / 7)));
+      const step = returning ? 12 : Math.max(3, Math.round((100 - runtime.awakeningProgress) / 7));
+      const next = Math.min(100, runtime.awakeningProgress + step);
       dispatch({ type: "AWAKENING_PROGRESS", progress: next });
       if (next === 100) {
         window.clearInterval(timer);
-        window.setTimeout(() => dispatch({ type: "AWAKENING_COMPLETE" }), 320);
+        window.localStorage.setItem(VISIT_KEY, "1");
+        window.setTimeout(() => dispatch({ type: "AWAKENING_COMPLETE" }), returning ? 120 : 320);
       }
-    }, 130);
+    }, cadence);
     return () => window.clearInterval(timer);
-  }, [runtime.awakeningProgress, runtime.presence]);
+  }, [returning, runtime.awakeningProgress, runtime.presence]);
 
   const current = STATES[runtime.presence];
-  const cells = useMemo(
-    () => selectCells(runtime.audience, runtime.presence === "awakening" ? "ready" : runtime.presence),
-    [runtime.audience, runtime.presence],
-  );
+  const cells = useMemo(() => selectCells(runtime.audience, runtime.presence === "awakening" ? "ready" : runtime.presence), [runtime.audience, runtime.presence]);
 
   function submit() {
     const value = text.trim();
@@ -74,10 +77,11 @@ export default function Home() {
     dispatch({ type: "AUDIENCE_SET", audience });
   }
 
-  return (
-    <main className={runtime.calmMode ? "atlas calm" : "atlas"} data-state={runtime.presence}>
-      <div className="ambient" aria-hidden="true"><div className="mist mist-a" /><div className="mist mist-b" /><div className="grid-field" /></div>
+  const className = ["atlas", runtime.calmMode ? "calm" : "", `audience-${runtime.audience}`].filter(Boolean).join(" ");
 
+  return (
+    <main className={className} data-state={runtime.presence}>
+      <div className="ambient" aria-hidden="true"><div className="mist mist-a" /><div className="mist mist-b" /><div className="grid-field" /></div>
       <header className="topbar">
         <a className="brand" href="#home" aria-label="ATLAS, accueil"><span className="brand-mark">A</span><span><strong>ATLAS</strong><small>INTELLIGENCE ÉMOTIONNELLE VIVANTE</small></span></a>
         <nav aria-label="Navigation principale"><a href="#home">Accueil</a><a href="#univers">Univers</a><a href="#cells">Cellules</a><a href="#trust">Confiance</a></nav>
@@ -85,19 +89,14 @@ export default function Home() {
       </header>
 
       {runtime.presence === "awakening" ? (
-        <section className="awakening" aria-live="polite">
-          <div className="awakening-core" style={{ "--progress": `${runtime.awakeningProgress}%` } as React.CSSProperties}><div className="pulse" /><div className="pulse pulse-two" /><div className="seed" /></div>
-          <p className="kicker">ATLAS AWAKENING</p><h1>La présence se construit.</h1><p>{current.detail}</p>
-          <div className="progress" aria-label={`Chargement ${runtime.awakeningProgress} %`}><span style={{ width: `${runtime.awakeningProgress}%` }} /></div>
-          <button onClick={() => dispatch({ type: "AWAKENING_COMPLETE" })}>Entrer directement</button>
-        </section>
+        <Awakening progress={runtime.awakeningProgress} returning={returning} detail={current.detail} onSkip={() => { window.localStorage.setItem(VISIT_KEY, "1"); dispatch({ type: "AWAKENING_COMPLETE" }); }} />
       ) : (
         <>
           <section className="hero" id="home">
             <div className="hero-copy">
-              <p className="kicker">ATLAS / ORCHESTRATEUR ACTIF</p>
+              <p className="kicker">ATLAS / {AUDIENCE_LABELS[runtime.audience].toUpperCase()}</p>
               <h1>Une intelligence qui change de forme.<br /><em>Jamais de nature.</em></h1>
-              <p className="lead">Chaque action déclenche un événement explicite. La présence, les cellules, l’accessibilité et la mémoire autorisée évoluent ensemble.</p>
+              <p className="lead">La présence, le rythme, la densité et les cellules s’adaptent à l’univers choisi, tout en conservant les mêmes règles de sécurité et de consentement.</p>
               <div className="composer">
                 <label htmlFor="entry">Qu’est-ce qui vous occupe aujourd’hui ?</label>
                 <textarea id="entry" value={text} onFocus={() => dispatch({ type: "USER_STARTED_INPUT" })} onChange={(event) => setText(event.target.value)} placeholder="Parlez librement. ATLAS distinguera ce qui est certain, probable, émotionnel ou encore imprécis." />
@@ -105,38 +104,23 @@ export default function Home() {
               </div>
               <div className="principles"><span>Événements traçables</span><span>Aucun diagnostic</span><span>Mémoire contrôlable</span><span>Transitions réversibles</span></div>
             </div>
-
-            <div className="presence-stage" aria-label={`État d’ATLAS : ${current.label}`}>
-              <div className="orbit orbit-one" /><div className="orbit orbit-two" /><div className="orbit orbit-three" />
-              <div className="presence-shell"><div className="crown" /><div className="attention"><i /><i /></div><div className="voice-organ" /><div className="neural neural-a" /><div className="neural neural-b" /><div className="neural neural-c" /></div>
-              <div className="status"><span>ÉTAT</span><strong>{current.label}</strong><small>{current.detail}</small></div>
-            </div>
+            <Presence label={current.label} detail={current.detail} />
           </section>
 
           <section className="section" id="univers">
             <p className="kicker">UN NOYAU / TROIS ÉCOSYSTÈMES</p><h2>L’utilisateur choisit son univers. ATLAS adapte ensuite la forme.</h2>
-            <div className="cards">
-              {(Object.keys(AUDIENCE_LABELS) as AtlasAudience[]).map((audience, index) => (
-                <article key={audience} className={runtime.audience === audience ? "selected" : ""}>
-                  <span>0{index + 1}</span><h3>{AUDIENCE_LABELS[audience]}</h3>
-                  <p>{audience === "adolescent" ? "Mode discret, adulte de confiance et protections renforcées." : audience === "senior" ? "Voix prioritaire, texte agrandi, rythme lent et sécurité numérique." : "Charge mentale, décisions, relations, travail et reconstruction."}</p>
-                  <button onClick={() => setAudience(audience)}>Activer cet univers</button>
-                </article>
-              ))}
-            </div>
+            <AudienceSelector active={runtime.audience} onSelect={setAudience} />
           </section>
 
           <section className="section architecture" id="cells">
             <p className="kicker">REGISTRE DE CELLULES</p><h2>{cells.length} cellule(s) compatible(s) avec {AUDIENCE_LABELS[runtime.audience]} et l’état actuel.</h2>
-            <div className="cards">
-              {cells.map((cell) => <article key={cell.id}><span>{cell.durationMinutes} MIN</span><h3>{cell.title}</h3><p>{cell.purpose}</p><small>{cell.safetyLevel === "reinforced" ? "Protection renforcée" : "Protection standard"}</small></article>)}
-            </div>
+            <CellRegistryView cells={cells} />
           </section>
 
           <section className="section trust" id="trust">
             <p className="kicker">MÉMOIRE SOUS CONSENTEMENT</p><h2>Les préférences peuvent être conservées. Le contenu sensible ne l’est pas.</h2>
             <p className="lead">Univers, mode calme et choix de mémoire sont stockés localement. Les paroles saisies ne sont pas persistées par ce socle.</p>
-            <div className="composer-actions"><button onClick={() => dispatch({ type: "MEMORY_CONSENT_SET", enabled: !runtime.memoryConsent })}>{runtime.memoryConsent ? "Désactiver la mémoire" : "Autoriser la mémoire"}</button><button onClick={() => { clearPreferences(); dispatch({ type: "RESET_SESSION" }); }}>Effacer les préférences</button></div>
+            <div className="composer-actions"><button onClick={() => dispatch({ type: "MEMORY_CONSENT_SET", enabled: !runtime.memoryConsent })}>{runtime.memoryConsent ? "Désactiver la mémoire" : "Autoriser la mémoire"}</button><button onClick={() => { clearPreferences(); window.localStorage.removeItem(VISIT_KEY); setReturning(false); dispatch({ type: "RESET_SESSION" }); }}>Effacer les préférences</button></div>
           </section>
         </>
       )}
