@@ -4,6 +4,7 @@ import { useEffect, useMemo, useReducer, useState } from "react";
 import { Awakening } from "../components/atlas/Awakening";
 import { AudienceSelector, AUDIENCE_LABELS } from "../components/atlas/AudienceSelector";
 import { CellRegistryView } from "../components/atlas/CellRegistryView";
+import { ConversationSession } from "../components/atlas/ConversationSession";
 import { Presence } from "../components/atlas/Presence";
 import { selectCells } from "../lib/atlas/cells";
 import { clearPreferences, readPreferences, writePreferences } from "../lib/atlas/persistence";
@@ -24,7 +25,6 @@ const VISIT_KEY = "atlas.hasVisited";
 
 export default function Home() {
   const [runtime, dispatch] = useReducer(atlasReducer, INITIAL_ATLAS_STATE);
-  const [text, setText] = useState("");
   const [hydrated, setHydrated] = useState(false);
   const [returning, setReturning] = useState(false);
 
@@ -64,17 +64,16 @@ export default function Home() {
   const current = STATES[runtime.presence];
   const cells = useMemo(() => selectCells(runtime.audience, runtime.presence === "awakening" ? "ready" : runtime.presence), [runtime.audience, runtime.presence]);
 
-  function submit() {
-    const value = text.trim();
-    if (!value) return;
-    dispatch({ type: "USER_SUBMITTED_INPUT", text: value });
-    window.setTimeout(() => dispatch({ type: "INTERPRETATION_STARTED" }), 650);
-    window.setTimeout(() => dispatch({ type: "RESPONSE_STARTED" }), 1500);
-    window.setTimeout(() => dispatch({ type: "RESPONSE_COMPLETED" }), 3000);
-  }
-
   function setAudience(audience: AtlasAudience) {
     dispatch({ type: "AUDIENCE_SET", audience });
+  }
+
+  function setConversationPhase(phase: "listening" | "thinking" | "speaking" | "ready" | "vigilance") {
+    if (phase === "listening") dispatch({ type: "USER_STARTED_INPUT" });
+    if (phase === "thinking") dispatch({ type: "INTERPRETATION_STARTED" });
+    if (phase === "speaking") dispatch({ type: "RESPONSE_STARTED" });
+    if (phase === "ready") dispatch({ type: "RESPONSE_COMPLETED" });
+    if (phase === "vigilance") dispatch({ type: "SAFETY_ALERT" });
   }
 
   const className = ["atlas", runtime.calmMode ? "calm" : "", `audience-${runtime.audience}`].filter(Boolean).join(" ");
@@ -84,7 +83,7 @@ export default function Home() {
       <div className="ambient" aria-hidden="true"><div className="mist mist-a" /><div className="mist mist-b" /><div className="grid-field" /></div>
       <header className="topbar">
         <a className="brand" href="#home" aria-label="ATLAS, accueil"><span className="brand-mark">A</span><span><strong>ATLAS</strong><small>INTELLIGENCE ÉMOTIONNELLE VIVANTE</small></span></a>
-        <nav aria-label="Navigation principale"><a href="#home">Accueil</a><a href="#univers">Univers</a><a href="#cells">Cellules</a><a href="#trust">Confiance</a></nav>
+        <nav aria-label="Navigation principale"><a href="#home">Accueil</a><a href="#session">Session</a><a href="#univers">Univers</a><a href="#cells">Cellules</a><a href="#trust">Confiance</a></nav>
         <button className="quiet-button" onClick={() => dispatch({ type: "CALM_MODE_SET", enabled: !runtime.calmMode })}>{runtime.calmMode ? "Réactiver la présence" : "Mode calme"}</button>
       </header>
 
@@ -97,15 +96,15 @@ export default function Home() {
               <p className="kicker">ATLAS / {AUDIENCE_LABELS[runtime.audience].toUpperCase()}</p>
               <h1>Une intelligence qui change de forme.<br /><em>Jamais de nature.</em></h1>
               <p className="lead">La présence, le rythme, la densité et les cellules s’adaptent à l’univers choisi, tout en conservant les mêmes règles de sécurité et de consentement.</p>
-              <div className="composer">
-                <label htmlFor="entry">Qu’est-ce qui vous occupe aujourd’hui ?</label>
-                <textarea id="entry" value={text} onFocus={() => dispatch({ type: "USER_STARTED_INPUT" })} onChange={(event) => setText(event.target.value)} placeholder="Parlez librement. ATLAS distinguera ce qui est certain, probable, émotionnel ou encore imprécis." />
-                <div className="composer-actions"><button onClick={() => dispatch({ type: "USER_STARTED_INPUT" })}>Parler</button><button className="primary" onClick={submit}>Entrer dans ATLAS</button></div>
-              </div>
+              <a className="session-link" href="#session">Commencer une session structurée</a>
               <div className="principles"><span>Événements traçables</span><span>Aucun diagnostic</span><span>Mémoire contrôlable</span><span>Transitions réversibles</span></div>
             </div>
             <Presence label={current.label} detail={current.detail} />
           </section>
+
+          <div id="session" className="section">
+            <ConversationSession audience={runtime.audience} onPhase={setConversationPhase} />
+          </div>
 
           <section className="section" id="univers">
             <p className="kicker">UN NOYAU / TROIS ÉCOSYSTÈMES</p><h2>L’utilisateur choisit son univers. ATLAS adapte ensuite la forme.</h2>
