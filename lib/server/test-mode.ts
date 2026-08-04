@@ -5,6 +5,7 @@ import { databaseConfigured } from "./database";
 
 export const TEST_SESSION_COOKIE = "atlas_test_session";
 export const TEST_PASSWORDS_COOKIE = "atlas_test_passwords";
+export const TEST_ORGANIZATIONS_COOKIE = "atlas_test_organizations";
 export const DEFAULT_TEST_PASSWORD = "atlas-test-2026";
 
 export interface AtlasTestUser {
