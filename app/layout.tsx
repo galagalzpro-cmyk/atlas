@@ -3,6 +3,7 @@ import "./globals.css";
 import "./audience.css";
 import "./conversation.css";
 import "./journey.css";
+import "./portal.css";
 
 export const metadata: Metadata = {
   title: "ATLAS — Intelligence émotionnelle vivante",
