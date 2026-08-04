@@ -1,0 +1,25 @@
+name: ATLAS Quality Gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - production/atlas-foundation-v1
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit
+      - name: Run architecture, security, tests, types and production build
+        run: npm run check
