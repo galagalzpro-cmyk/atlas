@@ -1,5 +1,5 @@
-import { AtlasRuntime } from "../components/live/AtlasRuntime";
+import { AtlasEntityExperience } from "../components/entity/AtlasEntityExperience";
 
 export default function Home() {
-  return <AtlasRuntime />;
+  return <AtlasEntityExperience />;
 }
