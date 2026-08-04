@@ -17,6 +17,7 @@ export type AtlasEvent =
   | { type: "INTERPRETATION_STARTED" }
   | { type: "RESPONSE_STARTED" }
   | { type: "RESPONSE_COMPLETED" }
+  | { type: "SAFETY_ALERT" }
   | { type: "CALM_MODE_SET"; enabled: boolean }
   | { type: "AUDIENCE_SET"; audience: AtlasAudience }
   | { type: "MEMORY_CONSENT_SET"; enabled: boolean }
