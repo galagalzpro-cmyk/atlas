@@ -2,22 +2,26 @@ import Link from "next/link";
 import { getCommerceReadiness } from "../../lib/atlas/commerce";
 import { DEFAULT_CONSENTS, ATLAS_RETENTION_RULES } from "../../lib/atlas/governance";
 import { getIntegrationStatuses } from "../../lib/atlas/external-integrations";
+import { requireRole } from "../../lib/server/auth";
+import { logoutAction } from "../connexion/actions";
 
 const commerce = getCommerceReadiness(process.env);
 const integrations = getIntegrationStatuses(process.env, DEFAULT_CONSENTS);
 
-export default function AdministrationPage() {
+export default async function AdministrationPage() {
+  const user = await requireRole(["atlas_admin"]);
+
   return (
     <main className="portal-shell admin-shell">
       <header className="portal-header">
         <Link href="/" className="brand"><span className="brand-mark">A</span><span><strong>ATLAS</strong><small>CONTRÔLE DE PLATEFORME</small></span></Link>
-        <span className="environment-badge">PRÉVERSION — DONNÉES TECHNIQUES</span>
+        <div className="portal-user"><span>{user.displayName}</span><form action={logoutAction}><button type="submit">Se déconnecter</button></form></div>
       </header>
 
       <section className="portal-hero compact">
         <p className="kicker">GOUVERNANCE / SÉCURITÉ / EXPLOITATION</p>
         <h1>Voir ce qui est actif. Bloquer ce qui ne l’est pas.</h1>
-        <p className="lead">Ce tableau présente la préparation technique. Il ne remplace pas encore une authentification administrateur, une base d’audit ou une supervision clinique.</p>
+        <p className="lead">Cette console est protégée par une session serveur et le rôle atlas_admin. Les contrôles opérationnels sensibles restent verrouillés tant que l’infrastructure et l’audit complet ne sont pas configurés.</p>
       </section>
 
       <section className="status-grid">
