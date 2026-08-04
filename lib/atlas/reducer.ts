@@ -32,6 +32,8 @@ export function atlasReducer(
       return { ...state, presence: "speaking" };
     case "RESPONSE_COMPLETED":
       return { ...state, presence: state.calmMode ? "calm" : "ready" };
+    case "SAFETY_ALERT":
+      return { ...state, presence: "vigilance" };
     case "CALM_MODE_SET":
       return {
         ...state,
