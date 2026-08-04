@@ -9,12 +9,17 @@ export async function acceptInvitationAction(formData: FormData): Promise<void> 
   const displayName = String(formData.get("displayName") ?? "");
   const password = String(formData.get("password") ?? "");
   const confirmation = String(formData.get("confirmation") ?? "");
-  if (!token || password !== confirmation) redirect(`/invitation?token=${encodeURIComponent(token)}&error=mismatch`);
+  if (!token || password !== confirmation) {
+    redirect(`/invitation?token=${encodeURIComponent(token)}&error=mismatch`);
+  }
+
+  let destination = "/professionnels?invitation=accepted";
   try {
     const registration = await registerFromInvitation({ token, displayName, password });
     await createSession(registration.userId);
-    redirect("/professionnels?invitation=accepted");
   } catch {
-    redirect(`/invitation?token=${encodeURIComponent(token)}&error=invalid`);
+    destination = `/invitation?token=${encodeURIComponent(token)}&error=invalid`;
   }
+
+  redirect(destination);
 }
