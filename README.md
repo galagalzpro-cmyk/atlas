@@ -1,13 +1,21 @@
-# ATLAS — Neural Reinvented
+# ATLAS ZERO
 
-Prototype front-end haute fidélité basé sur la maquette sombre validée.
+Reconstruction complète d’ATLAS depuis une arborescence neuve.
 
-## Points clés
-- Premier écran fidèle à la référence validée, utilisé comme master visuel adaptatif 2K/4K/8K.
-- Effets neuraux, halo de pointeur et parallaxe intégrés sans contrôle technique visible.
-- Parcours émotionnel, respiration et relais humain simulés localement.
-- Responsive mobile, réduction des mouvements et PWA.
-- Aucun service externe, aucune donnée transmise.
+## Principes
 
-## Limites
-Ce prototype ne contient pas encore l'IA réelle, les comptes, le paiement, la mémoire sécurisée ou le relais humain opérationnel.
+- aucun héritage d’interface ou de composant de la version actuelle ;
+- architecture par domaines ;
+- expérience adaptative et générative ;
+- scénarios temps réel ;
+- plateforme commerciale et opérationnelle complète ;
+- sécurité, observabilité et tests intégrés dès la conception ;
+- production actuelle conservée comme sauvegarde indépendante.
+
+## Branche
+
+`rebuild/atlas-zero`
+
+## État
+
+Fondation initiale uniquement. Aucune fonctionnalité ne doit être considérée comme terminée tant que son contrat, ses erreurs, sa sécurité, ses tests et ses métriques ne sont pas validés.

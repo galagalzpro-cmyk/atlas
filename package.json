@@ -1,33 +1,26 @@
 {
-  "name": "atlas",
-  "version": "1.0.0-rc.1",
+  "name": "atlas-zero",
+  "version": "0.1.0",
   "private": true,
-  "engines": {
-    "node": "24.x"
-  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit",
-    "test:runtime": "node --experimental-strip-types tests/atlas-runtime.test.ts",
-    "check:architecture": "node scripts/validate-architecture.mjs",
-    "check:security": "node scripts/validate-server-security.mjs",
-    "db:migrate": "node --experimental-strip-types scripts/migrate-database.ts",
-    "db:bootstrap-admin": "node --experimental-strip-types scripts/bootstrap-admin.ts",
-    "check": "npm run check:architecture && npm run check:security && npm run test:runtime && npm run typecheck && npm run build"
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "next": "16.2.12",
-    "pg": "8.22.0",
-    "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "zod": "4.1.12"
   },
   "devDependencies": {
-    "@types/node": "26.1.1",
-    "@types/pg": "8.20.0",
-    "@types/react": "19.2.17",
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
-    "typescript": "7.0.2"
+    "eslint": "9.39.1",
+    "eslint-config-next": "16.2.12",
+    "typescript": "5.9.3"
   }
 }
