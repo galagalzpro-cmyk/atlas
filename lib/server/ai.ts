@@ -1,6 +1,6 @@
 import "server-only";
 import type { AtlasAudience } from "../atlas/types";
-import type { AtlasSafetyAssessment } from "../atlas/safety";
+import type { SafetyAssessment } from "../atlas/safety";
 
 export interface AtlasGeneratedReply {
   text: string;
@@ -58,7 +58,7 @@ function parseStructuredReply(raw: string): Pick<AtlasGeneratedReply, "text" | "
 export async function generateAtlasReply(input: {
   text: string;
   audience: AtlasAudience;
-  safety: AtlasSafetyAssessment;
+  safety: SafetyAssessment;
   signal?: AbortSignal;
 }): Promise<AtlasGeneratedReply> {
   const apiKey = process.env.OPENAI_API_KEY;
