@@ -4,6 +4,16 @@ import { redirect } from "next/navigation";
 import { databaseConfigured, getDatabase, queryOne } from "./database";
 import { createSessionToken, hashOptionalFingerprint, hashToken, verifyPassword } from "./security";
 import type { AtlasRole } from "../atlas/access";
+import {
+  DEFAULT_TEST_PASSWORD,
+  getAtlasTestUserByEmail,
+  getAtlasTestUserById,
+  hashTestPassword,
+  isAtlasTestMode,
+  parseTestPasswordMap,
+  TEST_PASSWORDS_COOKIE,
+  TEST_SESSION_COOKIE,
+} from "./test-mode";
 
 const COOKIE_NAME = "atlas_session";
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 14;
@@ -24,7 +34,14 @@ interface UserRow {
 }
 
 export async function authenticateWithPassword(email: string, password: string): Promise<AtlasSessionUser | null> {
-  if (!databaseConfigured()) return null;
+  if (isAtlasTestMode()) {
+    const user = getAtlasTestUserByEmail(email);
+    if (!user) return null;
+    const passwordMap = parseTestPasswordMap((await cookies()).get(TEST_PASSWORDS_COOKIE)?.value);
+    const expected = passwordMap[user.email] ?? hashTestPassword(DEFAULT_TEST_PASSWORD);
+    return hashTestPassword(password) === expected ? user : null;
+  }
+
   const normalizedEmail = email.trim().toLowerCase();
   const user = await queryOne<UserRow>(
     `SELECT id, email, display_name, platform_role, password_hash
@@ -37,17 +54,30 @@ export async function authenticateWithPassword(email: string, password: string):
 }
 
 export async function createSession(userId: string): Promise<void> {
+  const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
+  const cookieStore = await cookies();
+
+  if (isAtlasTestMode()) {
+    if (!getAtlasTestUserById(userId)) throw new Error("Unknown ATLAS test user");
+    cookieStore.set(TEST_SESSION_COOKIE, userId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      expires: expiresAt,
+    });
+    return;
+  }
+
   const token = createSessionToken();
   const tokenHash = hashToken(token);
   const requestHeaders = await headers();
   const userAgentHash = hashOptionalFingerprint(requestHeaders.get("user-agent"));
-  const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
   await getDatabase().query(
     `INSERT INTO atlas_sessions (user_id, token_hash, expires_at, user_agent_hash)
      VALUES ($1, $2, $3, $4)`,
     [userId, tokenHash, expiresAt, userAgentHash],
   );
-  const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -59,6 +89,11 @@ export async function createSession(userId: string): Promise<void> {
 
 export async function destroySession(): Promise<void> {
   const cookieStore = await cookies();
+  if (isAtlasTestMode()) {
+    cookieStore.delete(TEST_SESSION_COOKIE);
+    return;
+  }
+
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (token && databaseConfigured()) {
     await getDatabase().query(
@@ -70,7 +105,11 @@ export async function destroySession(): Promise<void> {
 }
 
 export async function getCurrentUser(): Promise<AtlasSessionUser | null> {
-  if (!databaseConfigured()) return null;
+  if (isAtlasTestMode()) {
+    const userId = (await cookies()).get(TEST_SESSION_COOKIE)?.value;
+    return userId ? getAtlasTestUserById(userId) : null;
+  }
+
   const token = (await cookies()).get(COOKIE_NAME)?.value;
   if (!token) return null;
   return queryOne<AtlasSessionUser>(
