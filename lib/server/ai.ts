@@ -1,12 +1,11 @@
 import "server-only";
-import type { AtlasAudience } from "../atlas/types";
-import type { SafetyAssessment } from "../atlas/safety";
 import type { AtlasConversationTurn } from "../atlas/conversation";
-import type { AtlasAutonomyDecision } from "../atlas/autonomy";
-import { describeAtlasAutonomyDecision } from "../atlas/autonomy";
-import type { AtlasEmotionalState } from "../atlas/emotional-intelligence";
-import { describeAtlasEmotionalState } from "../atlas/emotional-intelligence";
-import { buildConversationMemory, describeConversationMemory } from "../atlas/memory";
+import type { AtlasTurnPlan } from "../atlas/orchestrator";
+import { describeAtlasTurnPlan } from "../atlas/orchestrator";
+import { describeAtlasCognitiveState } from "../atlas/cognitive-state";
+import { describeAtlasRelationalState } from "../atlas/relational-core";
+import { describeAtlasPolicy } from "../atlas/policy-kernel";
+import { describeConversationMemory } from "../atlas/memory";
 import {
   ATLAS_PRESENCE_CONTRACT,
   buildAtlasConversationContext,
@@ -15,12 +14,11 @@ import {
 
 export interface AtlasGeneratedReply {
   text: string;
-  nextStep: string;
-  labels: string[];
   provider: "openai";
   model: string;
   requestId: string | null;
   latencyMs: number;
+  revisionCount: 0 | 1;
 }
 
 function extractOutputText(payload: unknown): string {
@@ -40,43 +38,58 @@ function extractOutputText(payload: unknown): string {
   }).join("\n");
 }
 
-function parseStructuredReply(raw: string): Pick<AtlasGeneratedReply, "text" | "nextStep" | "labels"> {
+function parseText(raw: string, maxCharacters: number): string {
   try {
-    const parsed = JSON.parse(raw) as { text?: unknown; nextStep?: unknown; labels?: unknown };
+    const parsed = JSON.parse(raw) as { text?: unknown };
     if (typeof parsed.text !== "string") throw new Error("invalid");
-    return {
-      text: parsed.text.slice(0, 1800).trim(),
-      nextStep: typeof parsed.nextStep === "string" ? parsed.nextStep.slice(0, 320).trim() : "",
-      labels: Array.isArray(parsed.labels)
-        ? parsed.labels.filter((label): label is string => typeof label === "string").slice(0, 2)
-        : [],
-    };
+    return parsed.text.trim().slice(0, maxCharacters);
   } catch {
-    return {
-      text: raw.slice(0, 1800).trim(),
-      nextStep: "",
-      labels: [],
-    };
+    return raw.trim().slice(0, maxCharacters);
   }
 }
 
-export async function generateAtlasReply(input: {
-  text: string;
-  audience: AtlasAudience;
-  safety: SafetyAssessment;
+function maxOutputTokens(plan: AtlasTurnPlan): number {
+  if (plan.relational.responseLength === "developed") return 900;
+  if (plan.relational.responseLength === "balanced") return 650;
+  if (plan.relational.responseLength === "short") return 420;
+  return 260;
+}
+
+function cognitiveInstructions(plan: AtlasTurnPlan): string {
+  return [
+    ATLAS_PRESENCE_CONTRACT,
+    getAudiencePresenceRule(plan.cognitive.audience),
+    `Plan autonome : ${describeAtlasTurnPlan(plan)}.`,
+    `État cognitif : ${describeAtlasCognitiveState(plan.cognitive)}.`,
+    `État relationnel : ${describeAtlasRelationalState(plan.relational)}.`,
+    `Politique : ${describeAtlasPolicy(plan.policy)}.`,
+    "Mémoire de travail :",
+    describeConversationMemory(plan.memory),
+    `Mouvement conversationnel obligatoire : ${plan.cognitive.nextMove}.`,
+    plan.cognitive.reasonNotToAskQuestion
+      ? `Ne pose aucune question. Raison interne : ${plan.cognitive.reasonNotToAskQuestion}`
+      : "Une seule question est autorisée uniquement si elle fait avancer le mouvement choisi.",
+    "Les hypothèses internes ne sont jamais des faits. Ne les expose pas comme des catégories ou des scores.",
+    "Respecte les corrections, préférences, refus et questions déjà posées.",
+    "Ne crée ni exclusivité, ni dette émotionnelle, ni pression pour revenir.",
+    "Retourne uniquement un objet JSON contenant la propriété text.",
+  ].join(" ");
+}
+
+async function requestReply(input: {
+  plan: AtlasTurnPlan;
   history: AtlasConversationTurn[];
-  autonomy: AtlasAutonomyDecision;
-  emotional: AtlasEmotionalState;
+  text: string;
+  extraInstructions?: string[];
   signal?: AbortSignal;
-}): Promise<AtlasGeneratedReply> {
+}): Promise<Omit<AtlasGeneratedReply, "revisionCount">> {
   const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.ATLAS_OPENAI_MODEL || "gpt-5";
   if (!apiKey) throw new Error("External AI is not configured");
-  if (input.safety.level === "urgent" || input.safety.shouldPauseGeneration) {
-    throw new Error("External generation is blocked by local safety policy");
+  if (!input.plan.policy.externalGenerationAllowed) {
+    throw new Error("External generation is blocked by ATLAS policy");
   }
 
-  const memory = buildConversationMemory(input.history, input.text);
   const startedAt = Date.now();
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -88,40 +101,24 @@ export async function generateAtlasReply(input: {
       model,
       store: false,
       instructions: [
-        ATLAS_PRESENCE_CONTRACT,
-        getAudiencePresenceRule(input.audience),
-        describeAtlasAutonomyDecision(input.autonomy),
-        describeAtlasEmotionalState(input.emotional),
-        "Mémoire structurée de session :",
-        describeConversationMemory(memory),
-        "Respecte strictement les corrections, préférences, refus et questions déjà posées.",
-        "N'utilise jamais un élément incertain comme un fait établi.",
-        "Respecte strictement la décision autonome et la lecture émotionnelle : besoin, mode, profondeur, rythme, nombre maximal de questions et niveau de préparation à l'action.",
-        "N'affirme jamais qu'une émotion est certaine. Si la confiance est faible, réponds au besoin sans nommer l'émotion.",
-        "Retourne uniquement un objet JSON avec text, nextStep et labels.",
-        "text contient la réponse conversationnelle complète.",
-        "nextStep reste vide sauf lorsqu'une action concrète est réellement utile, demandée et autorisée.",
-        "labels reste vide ou contient au maximum deux libellés techniques invisibles pour la personne.",
+        cognitiveInstructions(input.plan),
+        ...(input.extraInstructions ?? []),
       ].join(" "),
       input: buildAtlasConversationContext({
-        history: input.history.slice(-input.autonomy.memoryTurns),
+        history: input.history.slice(-input.plan.autonomy.memoryTurns),
         text: input.text,
       }),
-      max_output_tokens: input.autonomy.depth === "deep" ? 850 : input.autonomy.depth === "balanced" ? 650 : 420,
+      max_output_tokens: maxOutputTokens(input.plan),
       text: {
         format: {
           type: "json_schema",
-          name: "atlas_reply",
+          name: "atlas_reply_v4",
           strict: true,
           schema: {
             type: "object",
             additionalProperties: false,
-            required: ["text", "nextStep", "labels"],
-            properties: {
-              text: { type: "string" },
-              nextStep: { type: "string" },
-              labels: { type: "array", maxItems: 2, items: { type: "string" } },
-            },
+            required: ["text"],
+            properties: { text: { type: "string" } },
           },
         },
       },
@@ -134,11 +131,47 @@ export async function generateAtlasReply(input: {
   if (!response.ok) throw new Error(payload.error?.message || "External AI request failed");
   const output = extractOutputText(payload);
   if (!output) throw new Error("External AI returned no text");
+
   return {
-    ...parseStructuredReply(output),
+    text: parseText(output, input.plan.policy.maxResponseCharacters),
     provider: "openai",
     model,
     requestId: response.headers.get("x-request-id") || payload.id || null,
     latencyMs: Date.now() - startedAt,
   };
+}
+
+export async function generateAtlasReply(input: {
+  plan: AtlasTurnPlan;
+  history: AtlasConversationTurn[];
+  text: string;
+  signal?: AbortSignal;
+}): Promise<AtlasGeneratedReply> {
+  return {
+    ...(await requestReply(input)),
+    revisionCount: 0,
+  };
+}
+
+export async function reviseAtlasReply(input: {
+  plan: AtlasTurnPlan;
+  history: AtlasConversationTurn[];
+  text: string;
+  previousReply: string;
+  revisionInstructions: string[];
+  signal?: AbortSignal;
+}): Promise<AtlasGeneratedReply> {
+  if (input.plan.policy.maxRevisions < 1) throw new Error("Revision is not allowed by policy");
+  const revised = await requestReply({
+    plan: input.plan,
+    history: input.history,
+    text: input.text,
+    signal: input.signal,
+    extraInstructions: [
+      `Réponse précédente à corriger : ${JSON.stringify(input.previousReply)}.`,
+      `Corrections obligatoires : ${input.revisionInstructions.join(" ")}.`,
+      "Réécris entièrement la réponse sans commenter la révision.",
+    ],
+  });
+  return { ...revised, revisionCount: 1 };
 }
