@@ -5,7 +5,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 type Audience = "adolescent" | "adult" | "senior";
 type EngineMode = "local" | "governed";
-type Turn = { role: "user" | "assistant"; text: string; nextStep?: string };
+type Turn = { role: "user" | "assistant"; text: string };
 type SpeechResultEvent = { results: { [index: number]: { [index: number]: { transcript: string } } } };
 type BrowserRecognition = {
   lang: string;
@@ -37,6 +37,7 @@ export default function ConversationTestPage() {
   const [consent, setConsent] = useState(false);
   const [message, setMessage] = useState("");
   const [turns, setTurns] = useState<Turn[]>([{ role: "assistant", text: MODELS.adult.starter }]);
+  const [conversationState, setConversationState] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
@@ -67,6 +68,7 @@ export default function ConversationTestPage() {
   function reset(nextAudience = audience) {
     stopVoice();
     setTurns([{ role: "assistant", text: MODELS[nextAudience].starter }]);
+    setConversationState(null);
     setMessage("");
     setTrace("");
     setNotice("Nouvelle conversation ouverte.");
@@ -109,7 +111,7 @@ export default function ConversationTestPage() {
       setNotice("Activez le consentement pour tester le moteur génératif gouverné.");
       return;
     }
-    const history = turns.map(({ role, text: turnText }) => ({ role, text: turnText }));
+
     setTurns((current) => [...current, { role: "user", text }]);
     setMessage("");
     setLoading(true);
@@ -121,24 +123,25 @@ export default function ConversationTestPage() {
         body: JSON.stringify({
           text,
           audience,
-          history,
+          conversationState,
           externalAiConsent: engineMode === "governed" && consent,
+          memoryConsent: false,
           labMode: true,
         }),
       });
       const data = await response.json() as {
         error?: string;
         traceId?: string;
-        reply?: { text?: string; nextStep?: string } | string;
+        reply?: string;
+        conversationState?: string | null;
         lab?: { source?: string };
       };
       if (!response.ok) throw new Error(data.error || "La conversation n’a pas pu être traitée.");
-      const reply = typeof data.reply === "string"
-        ? { text: data.reply }
-        : { text: data.reply?.text || "ATLAS a reçu votre message.", nextStep: data.reply?.nextStep };
-      setTurns((current) => [...current, { role: "assistant", ...reply }]);
+      const reply = data.reply?.trim() || "ATLAS a reçu votre message.";
+      setTurns((current) => [...current, { role: "assistant", text: reply }]);
+      setConversationState(data.conversationState ?? null);
       setTrace([data.lab?.source, data.traceId].filter(Boolean).join(" · "));
-      speak([reply.text, reply.nextStep || ""].filter(Boolean).join(" "));
+      speak(reply);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Une erreur est survenue.");
     } finally {
@@ -155,8 +158,8 @@ export default function ConversationTestPage() {
 
       <section className="portal-hero compact">
         <p className="kicker">CONVERSATION / MÉMOIRE / VOIX</p>
-        <h1>Tester le véritable cœur conversationnel.</h1>
-        <p className="lead">Le mode local vérifie les garde-fous. Le mode gouverné mobilise le moteur génératif avec la mémoire, la sécurité et les contrôles ATLAS.</p>
+        <h1>Tester le cœur conversationnel V4.</h1>
+        <p className="lead">Le mode local utilise les réponses gouvernées sans fournisseur externe. Le mode ATLAS gouverné active la génération, la critique et une révision bornée.</p>
       </section>
 
       <section className="portal-panel">
@@ -185,7 +188,6 @@ export default function ConversationTestPage() {
             <article key={`${turn.role}-${index}`} style={{ padding: "1rem", border: "1px solid rgba(25,25,25,.18)", borderRadius: "1rem", marginLeft: turn.role === "user" ? "10%" : 0, marginRight: turn.role === "assistant" ? "10%" : 0 }}>
               <small>{turn.role === "assistant" ? "ATLAS" : "VOUS"}</small>
               <p>{turn.text}</p>
-              {turn.nextStep && <p>{turn.nextStep}</p>}
             </article>
           ))}
           {loading && <p>ATLAS prépare sa réponse…</p>}
