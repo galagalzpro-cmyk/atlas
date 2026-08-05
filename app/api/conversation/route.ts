@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { assessSafety } from "../../../lib/atlas/safety";
 import { buildReply, type AtlasConversationTurn } from "../../../lib/atlas/conversation";
 import type { AtlasAudience } from "../../../lib/atlas/types";
+import { validateAtlasPresenceReply } from "../../../lib/atlas/presence";
 import { generateAtlasReply } from "../../../lib/server/ai";
 import { consumeRateLimit } from "../../../lib/server/rate-limit";
 import { databaseConfigured, getDatabase } from "../../../lib/server/database";
@@ -15,12 +16,12 @@ function isAudience(value: unknown): value is AtlasAudience {
 
 function parseHistory(value: unknown): AtlasConversationTurn[] {
   if (!Array.isArray(value)) return [];
-  return value.slice(-12).flatMap((item) => {
+  return value.slice(-24).flatMap((item) => {
     if (!item || typeof item !== "object") return [];
     const role = (item as { role?: unknown }).role;
     const text = (item as { text?: unknown }).text;
     if ((role !== "user" && role !== "assistant") || typeof text !== "string") return [];
-    const normalized = text.trim().slice(0, 1800);
+    const normalized = text.trim().slice(0, 2000);
     return normalized ? [{ role, text: normalized }] : [];
   });
 }
@@ -55,10 +56,19 @@ export async function POST(request: Request) {
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12_000);
+  const timeout = setTimeout(() => controller.abort(), 14_000);
   try {
-    const generated = await generateAtlasReply({ text, audience, safety, signal: controller.signal });
+    const generated = await generateAtlasReply({ text, audience, safety, history, signal: controller.signal });
+    const presence = validateAtlasPresenceReply({
+      reply: generated.text,
+      latestUserText: text,
+      history,
+    });
+
+    const accepted = presence.valid ? generated : localReply;
+    const source = presence.valid ? "external" : "local_guardrail";
     const user = await getCurrentUser();
+
     if (databaseConfigured()) {
       await getDatabase().query(
         `INSERT INTO atlas_ai_runs
@@ -73,12 +83,16 @@ export async function POST(request: Request) {
           generated.model,
           generated.requestId,
           text.length,
-          generated.text.length + generated.nextStep.length,
+          accepted.text.length + accepted.nextStep.length,
           generated.latencyMs,
         ],
       );
     }
-    return NextResponse.json({ reply: generated, safety, source: "external" }, { headers: { "Cache-Control": "no-store" } });
+
+    return NextResponse.json(
+      { reply: accepted, safety, source },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   } catch {
     return NextResponse.json({ reply: localReply, safety, source: "local_fallback" }, { headers: { "Cache-Control": "no-store" } });
   } finally {
