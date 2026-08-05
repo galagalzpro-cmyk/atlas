@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { assessSafety } from "../../../lib/atlas/safety";
 import { buildReply, type AtlasConversationTurn } from "../../../lib/atlas/conversation";
 import type { AtlasAudience } from "../../../lib/atlas/types";
+import { decideAtlasAutonomy } from "../../../lib/atlas/autonomy";
 import { validateAtlasPresenceReply } from "../../../lib/atlas/presence";
 import { generateAtlasReply } from "../../../lib/server/ai";
 import { consumeRateLimit } from "../../../lib/server/rate-limit";
@@ -50,15 +51,33 @@ export async function POST(request: Request) {
   }
 
   const safety = assessSafety(text, audience);
+  const autonomy = decideAtlasAutonomy({ text, audience, safety, history });
   const localReply = buildReply(text, audience, safety, history);
-  if (safety.level === "urgent" || safety.shouldPauseGeneration || !externalAiConsent || !process.env.OPENAI_API_KEY) {
-    return NextResponse.json({ reply: localReply, safety, source: "local" }, { headers: { "Cache-Control": "no-store" } });
+
+  if (
+    safety.level === "urgent" ||
+    safety.shouldPauseGeneration ||
+    !autonomy.shouldUseExternalIntelligence ||
+    !externalAiConsent ||
+    !process.env.OPENAI_API_KEY
+  ) {
+    return NextResponse.json(
+      { reply: localReply, safety, autonomy, source: "local" },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   }
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 14_000);
   try {
-    const generated = await generateAtlasReply({ text, audience, safety, history, signal: controller.signal });
+    const generated = await generateAtlasReply({
+      text,
+      audience,
+      safety,
+      history,
+      autonomy,
+      signal: controller.signal,
+    });
     const presence = validateAtlasPresenceReply({
       reply: generated.text,
       latestUserText: text,
@@ -90,11 +109,14 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { reply: accepted, safety, source },
+      { reply: accepted, safety, autonomy, source },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch {
-    return NextResponse.json({ reply: localReply, safety, source: "local_fallback" }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json(
+      { reply: localReply, safety, autonomy, source: "local_fallback" },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   } finally {
     clearTimeout(timeout);
   }
