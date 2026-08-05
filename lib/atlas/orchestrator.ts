@@ -1,16 +1,16 @@
-import { assessSafety } from "./safety";
-import { decideAtlasAutonomy } from "./autonomy";
+import { assessSafety } from "./safety.ts";
+import { decideAtlasAutonomy } from "./autonomy.ts";
 import {
   inferAtlasEmotionalState,
   refineAtlasAutonomy,
   adaptAtlasLocalReply,
-} from "./emotional-intelligence";
-import { buildConversationMemory } from "./memory";
-import { buildAtlasRelationalState } from "./relational-core";
-import { buildAtlasCognitiveState } from "./cognitive-state";
-import { evaluateAtlasPolicy } from "./policy-kernel";
-import { buildReply, type AtlasConversationTurn, type AtlasReply } from "./conversation";
-import type { AtlasAudience } from "./types";
+} from "./emotional-intelligence.ts";
+import { buildConversationMemory } from "./memory.ts";
+import { buildAtlasRelationalState } from "./relational-core.ts";
+import { buildAtlasCognitiveState } from "./cognitive-state.ts";
+import { evaluateAtlasPolicy } from "./policy-kernel.ts";
+import { buildReply, type AtlasConversationTurn, type AtlasReply } from "./conversation.ts";
+import type { AtlasAudience } from "./types.ts";
 
 export interface AtlasTurnPlan {
   safety: ReturnType<typeof assessSafety>;
