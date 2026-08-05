@@ -4,6 +4,8 @@ import type { SafetyAssessment } from "../atlas/safety";
 import type { AtlasConversationTurn } from "../atlas/conversation";
 import type { AtlasAutonomyDecision } from "../atlas/autonomy";
 import { describeAtlasAutonomyDecision } from "../atlas/autonomy";
+import type { AtlasEmotionalState } from "../atlas/emotional-intelligence";
+import { describeAtlasEmotionalState } from "../atlas/emotional-intelligence";
 import {
   ATLAS_PRESENCE_CONTRACT,
   buildAtlasConversationContext,
@@ -63,6 +65,7 @@ export async function generateAtlasReply(input: {
   safety: SafetyAssessment;
   history: AtlasConversationTurn[];
   autonomy: AtlasAutonomyDecision;
+  emotional: AtlasEmotionalState;
   signal?: AbortSignal;
 }): Promise<AtlasGeneratedReply> {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -86,10 +89,12 @@ export async function generateAtlasReply(input: {
         ATLAS_PRESENCE_CONTRACT,
         getAudiencePresenceRule(input.audience),
         describeAtlasAutonomyDecision(input.autonomy),
-        "Respecte strictement la décision autonome : besoin, mode, profondeur, nombre maximal de questions et présence ou absence d'action.",
+        describeAtlasEmotionalState(input.emotional),
+        "Respecte strictement la décision autonome et la lecture émotionnelle : besoin, mode, profondeur, rythme, nombre maximal de questions et niveau de préparation à l'action.",
+        "N'affirme jamais qu'une émotion est certaine. Si la confiance est faible, réponds au besoin sans nommer l'émotion.",
         "Retourne uniquement un objet JSON avec text, nextStep et labels.",
         "text contient la réponse conversationnelle complète.",
-        "nextStep reste vide sauf lorsqu'une action concrète est réellement utile et autorisée par la décision autonome.",
+        "nextStep reste vide sauf lorsqu'une action concrète est réellement utile, demandée et autorisée.",
         "labels reste vide ou contient au maximum deux libellés techniques invisibles pour la personne.",
       ].join(" "),
       input: buildAtlasConversationContext({
