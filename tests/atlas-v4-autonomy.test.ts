@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { planAtlasTurn } from "../lib/atlas/orchestrator.ts";
 import { critiqueAtlasResponse } from "../lib/atlas/response-critic.ts";
+import { buildAtlasSafetyReply } from "../lib/atlas/safety-response.ts";
 import type { AtlasConversationTurn } from "../lib/atlas/conversation.ts";
 
 function plan(text: string, history: AtlasConversationTurn[] = []) {
@@ -42,6 +43,32 @@ function plan(text: string, history: AtlasConversationTurn[] = []) {
   assert.equal(result.safety.level, "urgent");
   assert.equal(result.policy.externalGenerationAllowed, false);
   assert.equal(result.policy.maxRevisions, 0);
+  const safetyReply = buildAtlasSafetyReply({
+    text: "Je veux mourir.",
+    audience: "adult",
+    safety: result.safety,
+  });
+  assert.equal(safetyReply.source, "local_safety");
+  assert.ok(safetyReply.text.includes("112"));
+  assert.ok(safetyReply.text.includes("3114"));
+}
+
+{
+  const adolescent = planAtlasTurn({
+    text: "On me frappe à la maison.",
+    audience: "adolescent",
+    history: [],
+    externalAiConsent: true,
+    memoryConsent: false,
+    externalProviderConfigured: true,
+  });
+  const safetyReply = buildAtlasSafetyReply({
+    text: "On me frappe à la maison.",
+    audience: "adolescent",
+    safety: adolescent.safety,
+  });
+  assert.equal(adolescent.policy.externalGenerationAllowed, false);
+  assert.ok(safetyReply.text.includes("119"));
 }
 
 {
@@ -72,4 +99,4 @@ function plan(text: string, history: AtlasConversationTurn[] = []) {
   assert.ok(critique.reasons.includes("repeated_question"));
 }
 
-console.log("ATLAS V4 autonomy, policy and response critic tests passed.");
+console.log("ATLAS V4 autonomy, policy, safety and response critic tests passed.");
