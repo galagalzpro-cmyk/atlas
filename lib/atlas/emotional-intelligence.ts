@@ -251,6 +251,7 @@ function intensitySignals(text: string, dominantScore: number): number {
     "c est trop",
     "tout s ecroule",
     "je perds le controle",
+    "completement submerge",
   ]) ? 0.24 : 0;
   const punctuation = Math.min(0.15, exclamations * 0.035) + repeatedPunctuation;
   const caps = uppercaseRatio > 0.45 ? 0.12 : 0;
@@ -285,7 +286,12 @@ function inferOpenness(input: {
   intensity: number;
   relationalSignal: AtlasRelationalSignal;
 }): AtlasEmotionalOpenness {
-  if (input.intensity >= 0.84 || includesAny(input.normalized, ["je n arrive plus a penser", "je suis submerge", "je perds le controle"])) {
+  if (input.intensity >= 0.84 || includesAny(input.normalized, [
+    "je n arrive plus a penser",
+    "je suis submerge",
+    "completement submerge",
+    "je perds le controle",
+  ])) {
     return "flooded";
   }
   if (
@@ -551,7 +557,7 @@ export function validateAtlasEmotionalFit(input: {
 
   if (input.emotional.questionTolerance === "none" && questionCount > 0) reasons.push("question_during_low_tolerance");
   if (input.emotional.openness === "flooded" && words > 90) reasons.push("reply_too_long_for_flooded_state");
-  if (input.emotional.actionReadiness === "low" && includesAny(normalized, [
+  if ((input.emotional.actionReadiness === "low" || input.emotional.need === "containment") && includesAny(normalized, [
     "vous devriez",
     "tu devrais",
     "faites ceci",
