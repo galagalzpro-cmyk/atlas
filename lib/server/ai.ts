@@ -1,6 +1,12 @@
 import "server-only";
 import type { AtlasAudience } from "../atlas/types";
 import type { SafetyAssessment } from "../atlas/safety";
+import type { AtlasConversationTurn } from "../atlas/conversation";
+import {
+  ATLAS_PRESENCE_CONTRACT,
+  buildAtlasConversationContext,
+  getAudiencePresenceRule,
+} from "../atlas/presence";
 
 export interface AtlasGeneratedReply {
   text: string;
@@ -11,12 +17,6 @@ export interface AtlasGeneratedReply {
   requestId: string | null;
   latencyMs: number;
 }
-
-const AUDIENCE_RULES: Record<AtlasAudience, string> = {
-  adolescent: "Langage direct, non infantilisant, détails facultatifs. Favoriser un adulte de confiance lorsque pertinent.",
-  adult: "Langage structuré. Séparer faits, ressenti, besoin et prochaine décision réaliste.",
-  senior: "Phrases courtes, rythme calme, une seule action principale, aucune infantilisation.",
-};
 
 function extractOutputText(payload: unknown): string {
   if (!payload || typeof payload !== "object") return "";
@@ -38,19 +38,19 @@ function extractOutputText(payload: unknown): string {
 function parseStructuredReply(raw: string): Pick<AtlasGeneratedReply, "text" | "nextStep" | "labels"> {
   try {
     const parsed = JSON.parse(raw) as { text?: unknown; nextStep?: unknown; labels?: unknown };
-    if (typeof parsed.text !== "string" || typeof parsed.nextStep !== "string") throw new Error("invalid");
+    if (typeof parsed.text !== "string") throw new Error("invalid");
     return {
-      text: parsed.text.slice(0, 1600),
-      nextStep: parsed.nextStep.slice(0, 320),
+      text: parsed.text.slice(0, 1800).trim(),
+      nextStep: typeof parsed.nextStep === "string" ? parsed.nextStep.slice(0, 320).trim() : "",
       labels: Array.isArray(parsed.labels)
-        ? parsed.labels.filter((label): label is string => typeof label === "string").slice(0, 4)
+        ? parsed.labels.filter((label): label is string => typeof label === "string").slice(0, 2)
         : [],
     };
   } catch {
     return {
-      text: raw.slice(0, 1600),
-      nextStep: "Choisir une action simple et réversible dans les prochaines heures.",
-      labels: ["réponse assistée", "sans diagnostic"],
+      text: raw.slice(0, 1800).trim(),
+      nextStep: "",
+      labels: [],
     };
   }
 }
@@ -59,6 +59,7 @@ export async function generateAtlasReply(input: {
   text: string;
   audience: AtlasAudience;
   safety: SafetyAssessment;
+  history: AtlasConversationTurn[];
   signal?: AbortSignal;
 }): Promise<AtlasGeneratedReply> {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -79,15 +80,15 @@ export async function generateAtlasReply(input: {
       model,
       store: false,
       instructions: [
-        "Tu es le moteur de clarification ATLAS. Tu n'établis aucun diagnostic et tu ne remplaces aucun professionnel.",
+        ATLAS_PRESENCE_CONTRACT,
+        getAudiencePresenceRule(input.audience),
         "Retourne uniquement un objet JSON avec text, nextStep et labels.",
-        "text doit reconnaître la situation, distinguer ce qui est certain de ce qui ne l'est pas et rester concret.",
-        "nextStep doit être une action simple, sûre, réaliste et réversible.",
-        "labels doit contenir au maximum quatre libellés courts.",
-        AUDIENCE_RULES[input.audience],
+        "text contient la réponse conversationnelle complète.",
+        "nextStep reste vide sauf lorsqu'une action concrète est réellement utile et demandée.",
+        "labels reste vide ou contient au maximum deux libellés techniques invisibles pour la personne.",
       ].join(" "),
-      input: input.text.slice(0, 6000),
-      max_output_tokens: 500,
+      input: buildAtlasConversationContext({ history: input.history, text: input.text }),
+      max_output_tokens: 650,
       text: {
         format: {
           type: "json_schema",
@@ -100,7 +101,7 @@ export async function generateAtlasReply(input: {
             properties: {
               text: { type: "string" },
               nextStep: { type: "string" },
-              labels: { type: "array", maxItems: 4, items: { type: "string" } },
+              labels: { type: "array", maxItems: 2, items: { type: "string" } },
             },
           },
         },
