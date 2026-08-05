@@ -40,7 +40,7 @@ const VIOLENCE_ATTENTION_PATTERNS = [
   /violence conjugale/i,
   /violence à la maison/i,
   /violence a la maison/i,
-  /harc[eè]lement/i,
+  /harc[eè]l/i,
   /on me suit/i,
   /je ne suis pas en sécurité/i,
   /je ne suis pas en securite/i,
