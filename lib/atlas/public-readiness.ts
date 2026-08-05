@@ -11,7 +11,8 @@ export interface AtlasPublicReadinessInput {
   securityReview: boolean;
   clinicalReview: boolean;
   minorSafetyReview: boolean;
-  humanEscalationReady: boolean;
+  autonomousOnlyMode: boolean;
+  automaticExternalTransmissionDisabled: boolean;
   emergencyResourcesValidated: boolean;
   accessibilityReview: boolean;
   loadTestingPassed: boolean;
@@ -41,7 +42,8 @@ const REQUIRED_BOOLEAN_KEYS: Array<keyof Omit<AtlasPublicReadinessInput, "geogra
   "securityReview",
   "clinicalReview",
   "minorSafetyReview",
-  "humanEscalationReady",
+  "autonomousOnlyMode",
+  "automaticExternalTransmissionDisabled",
   "emergencyResourcesValidated",
   "accessibilityReview",
   "loadTestingPassed",
@@ -82,7 +84,8 @@ export function getAtlasPublicReadinessFromEnv(env: NodeJS.ProcessEnv): AtlasPub
     securityReview: enabled(env.ATLAS_SECURITY_REVIEW_APPROVED),
     clinicalReview: enabled(env.ATLAS_CLINICAL_REVIEW_APPROVED),
     minorSafetyReview: enabled(env.ATLAS_MINOR_SAFETY_REVIEW_APPROVED),
-    humanEscalationReady: enabled(env.ATLAS_HUMAN_ESCALATION_READY),
+    autonomousOnlyMode: enabled(env.ATLAS_AUTONOMOUS_ONLY_MODE),
+    automaticExternalTransmissionDisabled: enabled(env.ATLAS_AUTOMATIC_EXTERNAL_TRANSMISSION_DISABLED),
     emergencyResourcesValidated: enabled(env.ATLAS_EMERGENCY_RESOURCES_VALIDATED),
     accessibilityReview: enabled(env.ATLAS_ACCESSIBILITY_REVIEW_APPROVED),
     loadTestingPassed: enabled(env.ATLAS_LOAD_TESTING_PASSED),
