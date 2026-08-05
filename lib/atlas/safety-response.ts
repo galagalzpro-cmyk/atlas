@@ -1,10 +1,10 @@
-import type { AtlasAudience } from "./types";
-import type { SafetyAssessment } from "./safety";
+import type { AtlasAudience } from "./types.ts";
+import type { SafetyAssessment } from "./safety.ts";
 import {
   getImmediateEmergencyLine,
   getMinorProtectionLine,
   getSuicidePreventionLine,
-} from "./emergency-resources";
+} from "./emergency-resources.ts";
 
 export interface AtlasSafetyReply {
   text: string;
