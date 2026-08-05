@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCommerceReadiness } from "../../../lib/atlas/commerce";
+import { getAtlasPublicReadinessFromEnv } from "../../../lib/atlas/public-readiness";
 import { databaseConfigured, getDatabase } from "../../../lib/server/database";
 import { isAtlasTestMode } from "../../../lib/server/test-mode";
 
@@ -7,8 +8,10 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const commerce = getCommerceReadiness(process.env);
+  const publicReadiness = getAtlasPublicReadinessFromEnv(process.env);
   const testMode = isAtlasTestMode();
   let database = false;
+
   if (databaseConfigured()) {
     try {
       await getDatabase().query("SELECT 1");
@@ -48,15 +51,22 @@ export async function GET() {
     && capabilities.authentication
     && capabilities.scheduledMaintenance;
 
-  return NextResponse.json({
-    service: "atlas",
-    status: readyForPreproduction
+  const status = publicReadiness.ready
+    ? "public-ready"
+    : readyForPreproduction
       ? "preproduction-ready"
       : readyForFunctionalTesting
         ? "functional-test-ready"
-        : "configuration-required",
+        : "configuration-required";
+
+  return NextResponse.json({
+    service: "atlas",
+    status,
     readyForFunctionalTesting,
     readyForPreproduction,
+    readyForPublicLaunch: publicReadiness.ready,
+    publicScopeReady: publicReadiness.scopeReady,
+    publicLaunchBlockers: publicReadiness.blockers,
     timestamp: new Date().toISOString(),
     capabilities,
     missingCommerceRequirements: commerce.missingRequirements,
