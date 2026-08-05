@@ -6,6 +6,7 @@ import type { AtlasAutonomyDecision } from "../atlas/autonomy";
 import { describeAtlasAutonomyDecision } from "../atlas/autonomy";
 import type { AtlasEmotionalState } from "../atlas/emotional-intelligence";
 import { describeAtlasEmotionalState } from "../atlas/emotional-intelligence";
+import { buildConversationMemory, describeConversationMemory } from "../atlas/memory";
 import {
   ATLAS_PRESENCE_CONTRACT,
   buildAtlasConversationContext,
@@ -75,6 +76,7 @@ export async function generateAtlasReply(input: {
     throw new Error("External generation is blocked by local safety policy");
   }
 
+  const memory = buildConversationMemory(input.history, input.text);
   const startedAt = Date.now();
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -90,6 +92,10 @@ export async function generateAtlasReply(input: {
         getAudiencePresenceRule(input.audience),
         describeAtlasAutonomyDecision(input.autonomy),
         describeAtlasEmotionalState(input.emotional),
+        "Mémoire structurée de session :",
+        describeConversationMemory(memory),
+        "Respecte strictement les corrections, préférences, refus et questions déjà posées.",
+        "N'utilise jamais un élément incertain comme un fait établi.",
         "Respecte strictement la décision autonome et la lecture émotionnelle : besoin, mode, profondeur, rythme, nombre maximal de questions et niveau de préparation à l'action.",
         "N'affirme jamais qu'une émotion est certaine. Si la confiance est faible, réponds au besoin sans nommer l'émotion.",
         "Retourne uniquement un objet JSON avec text, nextStep et labels.",
