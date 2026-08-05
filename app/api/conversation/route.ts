@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { assessSafety } from "../../../lib/atlas/safety";
 import { buildReply, type AtlasConversationTurn } from "../../../lib/atlas/conversation";
@@ -17,6 +18,8 @@ import { getCurrentUser } from "../../../lib/server/auth";
 
 export const dynamic = "force-dynamic";
 
+type ConversationSource = "local" | "external" | "local_guardrail" | "local_fallback";
+
 function isAudience(value: unknown): value is AtlasAudience {
   return value === "adolescent" || value === "adult" || value === "senior";
 }
@@ -33,25 +36,57 @@ function parseHistory(value: unknown): AtlasConversationTurn[] {
   });
 }
 
+function responseBody(input: {
+  reply: { text: string; nextStep: string; labels: string[] };
+  safetyLevel: string;
+  source: ConversationSource;
+  traceId: string;
+  labMode: boolean;
+  diagnostics?: {
+    autonomy: ReturnType<typeof decideAtlasAutonomy>;
+    emotional: ReturnType<typeof inferAtlasEmotionalState>;
+    guardrails?: { presence: string[]; emotional: string[] };
+  };
+}) {
+  return {
+    reply: input.reply,
+    safetyLevel: input.safetyLevel,
+    traceId: input.traceId,
+    ...(input.labMode
+      ? {
+          lab: {
+            source: input.source,
+            autonomy: input.diagnostics?.autonomy,
+            emotional: input.diagnostics?.emotional,
+            guardrails: input.diagnostics?.guardrails,
+          },
+        }
+      : {}),
+  };
+}
+
 export async function POST(request: Request) {
+  const traceId = randomUUID();
   const body = await request.json().catch(() => null) as null | {
     text?: unknown;
     audience?: unknown;
     externalAiConsent?: unknown;
     history?: unknown;
+    labMode?: unknown;
   };
   const text = typeof body?.text === "string" ? body.text.trim().slice(0, 6000) : "";
   const audience = isAudience(body?.audience) ? body.audience : "adult";
   const externalAiConsent = body?.externalAiConsent === true;
+  const labMode = process.env.NODE_ENV !== "production" && body?.labMode === true;
   const history = parseHistory(body?.history);
-  if (!text) return NextResponse.json({ error: "Message requis." }, { status: 400 });
+  if (!text) return NextResponse.json({ error: "Message requis.", traceId }, { status: 400 });
 
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   const identifier = forwarded || request.headers.get("x-real-ip") || "unknown";
   const limit = await consumeRateLimit("conversation", identifier, 30, 60);
   if (!limit.allowed) {
     return NextResponse.json(
-      { error: "Trop de demandes. Réessayez dans quelques instants." },
+      { error: "Trop de demandes. Réessayez dans quelques instants.", traceId },
       { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
     );
   }
@@ -71,13 +106,20 @@ export async function POST(request: Request) {
     !process.env.OPENAI_API_KEY
   ) {
     return NextResponse.json(
-      { reply: localReply, safety, autonomy, emotional, source: "local" },
+      responseBody({
+        reply: localReply,
+        safetyLevel: safety.level,
+        source: "local",
+        traceId,
+        labMode,
+        diagnostics: { autonomy, emotional },
+      }),
       { headers: { "Cache-Control": "no-store" } },
     );
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 14_000);
+  const timeout = setTimeout(() => controller.abort(), 10_000);
   try {
     const generated = await generateAtlasReply({
       text,
@@ -93,14 +135,10 @@ export async function POST(request: Request) {
       latestUserText: text,
       history,
     });
-    const emotionalFit = validateAtlasEmotionalFit({
-      reply: generated.text,
-      emotional,
-    });
-
+    const emotionalFit = validateAtlasEmotionalFit({ reply: generated.text, emotional });
     const generatedAccepted = presence.valid && emotionalFit.valid;
     const accepted = generatedAccepted ? generated : localReply;
-    const source = generatedAccepted ? "external" : "local_guardrail";
+    const source: ConversationSource = generatedAccepted ? "external" : "local_guardrail";
     const user = await getCurrentUser();
 
     if (databaseConfigured()) {
@@ -124,12 +162,30 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { reply: accepted, safety, autonomy, emotional, source },
+      responseBody({
+        reply: accepted,
+        safetyLevel: safety.level,
+        source,
+        traceId,
+        labMode,
+        diagnostics: {
+          autonomy,
+          emotional,
+          guardrails: { presence: presence.reasons, emotional: emotionalFit.reasons },
+        },
+      }),
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch {
     return NextResponse.json(
-      { reply: localReply, safety, autonomy, emotional, source: "local_fallback" },
+      responseBody({
+        reply: localReply,
+        safetyLevel: safety.level,
+        source: "local_fallback",
+        traceId,
+        labMode,
+        diagnostics: { autonomy, emotional },
+      }),
       { headers: { "Cache-Control": "no-store" } },
     );
   } finally {
