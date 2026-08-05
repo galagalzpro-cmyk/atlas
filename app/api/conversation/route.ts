@@ -3,6 +3,12 @@ import { assessSafety } from "../../../lib/atlas/safety";
 import { buildReply, type AtlasConversationTurn } from "../../../lib/atlas/conversation";
 import type { AtlasAudience } from "../../../lib/atlas/types";
 import { decideAtlasAutonomy } from "../../../lib/atlas/autonomy";
+import {
+  adaptAtlasLocalReply,
+  inferAtlasEmotionalState,
+  refineAtlasAutonomy,
+  validateAtlasEmotionalFit,
+} from "../../../lib/atlas/emotional-intelligence";
 import { validateAtlasPresenceReply } from "../../../lib/atlas/presence";
 import { generateAtlasReply } from "../../../lib/server/ai";
 import { consumeRateLimit } from "../../../lib/server/rate-limit";
@@ -51,8 +57,11 @@ export async function POST(request: Request) {
   }
 
   const safety = assessSafety(text, audience);
-  const autonomy = decideAtlasAutonomy({ text, audience, safety, history });
-  const localReply = buildReply(text, audience, safety, history);
+  const emotional = inferAtlasEmotionalState({ text, audience, history });
+  const baseAutonomy = decideAtlasAutonomy({ text, audience, safety, history });
+  const autonomy = refineAtlasAutonomy(baseAutonomy, emotional);
+  const rawLocalReply = buildReply(text, audience, safety, history);
+  const localReply = adaptAtlasLocalReply(rawLocalReply, emotional, audience);
 
   if (
     safety.level === "urgent" ||
@@ -62,7 +71,7 @@ export async function POST(request: Request) {
     !process.env.OPENAI_API_KEY
   ) {
     return NextResponse.json(
-      { reply: localReply, safety, autonomy, source: "local" },
+      { reply: localReply, safety, autonomy, emotional, source: "local" },
       { headers: { "Cache-Control": "no-store" } },
     );
   }
@@ -76,6 +85,7 @@ export async function POST(request: Request) {
       safety,
       history,
       autonomy,
+      emotional,
       signal: controller.signal,
     });
     const presence = validateAtlasPresenceReply({
@@ -83,9 +93,14 @@ export async function POST(request: Request) {
       latestUserText: text,
       history,
     });
+    const emotionalFit = validateAtlasEmotionalFit({
+      reply: generated.text,
+      emotional,
+    });
 
-    const accepted = presence.valid ? generated : localReply;
-    const source = presence.valid ? "external" : "local_guardrail";
+    const generatedAccepted = presence.valid && emotionalFit.valid;
+    const accepted = generatedAccepted ? generated : localReply;
+    const source = generatedAccepted ? "external" : "local_guardrail";
     const user = await getCurrentUser();
 
     if (databaseConfigured()) {
@@ -109,12 +124,12 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { reply: accepted, safety, autonomy, source },
+      { reply: accepted, safety, autonomy, emotional, source },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch {
     return NextResponse.json(
-      { reply: localReply, safety, autonomy, source: "local_fallback" },
+      { reply: localReply, safety, autonomy, emotional, source: "local_fallback" },
       { headers: { "Cache-Control": "no-store" } },
     );
   } finally {
