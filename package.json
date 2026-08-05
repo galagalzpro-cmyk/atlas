@@ -11,11 +11,12 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test:runtime": "node --experimental-strip-types tests/atlas-runtime.test.ts",
+    "test:core": "node --experimental-strip-types tests/atlas-core-conversation.test.ts",
     "check:architecture": "node scripts/validate-architecture.mjs",
     "check:security": "node scripts/validate-server-security.mjs",
     "db:migrate": "node --experimental-strip-types scripts/migrate-database.ts",
     "db:bootstrap-admin": "node --experimental-strip-types scripts/bootstrap-admin.ts",
-    "check": "npm run check:architecture && npm run check:security && npm run test:runtime && npm run typecheck && npm run build"
+    "check": "npm run check:architecture && npm run check:security && npm run test:runtime && npm run test:core && npm run typecheck && npm run build"
   },
   "dependencies": {
     "next": "16.2.12",
