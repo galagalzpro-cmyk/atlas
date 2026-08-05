@@ -2,6 +2,8 @@ import "server-only";
 import type { AtlasAudience } from "../atlas/types";
 import type { SafetyAssessment } from "../atlas/safety";
 import type { AtlasConversationTurn } from "../atlas/conversation";
+import type { AtlasAutonomyDecision } from "../atlas/autonomy";
+import { describeAtlasAutonomyDecision } from "../atlas/autonomy";
 import {
   ATLAS_PRESENCE_CONTRACT,
   buildAtlasConversationContext,
@@ -60,6 +62,7 @@ export async function generateAtlasReply(input: {
   audience: AtlasAudience;
   safety: SafetyAssessment;
   history: AtlasConversationTurn[];
+  autonomy: AtlasAutonomyDecision;
   signal?: AbortSignal;
 }): Promise<AtlasGeneratedReply> {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -82,13 +85,18 @@ export async function generateAtlasReply(input: {
       instructions: [
         ATLAS_PRESENCE_CONTRACT,
         getAudiencePresenceRule(input.audience),
+        describeAtlasAutonomyDecision(input.autonomy),
+        "Respecte strictement la décision autonome : besoin, mode, profondeur, nombre maximal de questions et présence ou absence d'action.",
         "Retourne uniquement un objet JSON avec text, nextStep et labels.",
         "text contient la réponse conversationnelle complète.",
-        "nextStep reste vide sauf lorsqu'une action concrète est réellement utile et demandée.",
+        "nextStep reste vide sauf lorsqu'une action concrète est réellement utile et autorisée par la décision autonome.",
         "labels reste vide ou contient au maximum deux libellés techniques invisibles pour la personne.",
       ].join(" "),
-      input: buildAtlasConversationContext({ history: input.history, text: input.text }),
-      max_output_tokens: 650,
+      input: buildAtlasConversationContext({
+        history: input.history.slice(-input.autonomy.memoryTurns),
+        text: input.text,
+      }),
+      max_output_tokens: input.autonomy.depth === "deep" ? 850 : input.autonomy.depth === "balanced" ? 650 : 420,
       text: {
         format: {
           type: "json_schema",
