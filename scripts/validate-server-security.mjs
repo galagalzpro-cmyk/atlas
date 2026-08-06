@@ -10,11 +10,17 @@ const files = {
   stripeRoute: await readFile("app/api/webhooks/stripe/route.ts", "utf8"),
   paypalRoute: await readFile("app/api/webhooks/paypal/route.ts", "utf8"),
   conversationRoute: await readFile("app/api/conversation/route.ts", "utf8"),
+  orchestrator: await readFile("lib/atlas/orchestrator.ts", "utf8"),
+  policyKernel: await readFile("lib/atlas/policy-kernel.ts", "utf8"),
+  conversationState: await readFile("lib/server/conversation-state.ts", "utf8"),
   ai: await readFile("lib/server/ai.ts", "utf8"),
   maintenance: await readFile("app/api/maintenance/route.ts", "utf8"),
   passwordReset: await readFile("lib/server/password-reset.ts", "utf8"),
   schema: `${await readFile("database/001_foundation.sql", "utf8")}\n${await readFile("database/002_operations.sql", "utf8")}`,
 };
+
+const planIndex = files.conversationRoute.indexOf("planAtlasTurn(");
+const generationIndex = files.conversationRoute.indexOf("generateAtlasReply(");
 
 const requirements = [
   [files.auth.includes("httpOnly: true"), "session cookie must be HttpOnly"],
@@ -32,8 +38,13 @@ const requirements = [
   [files.paypalRoute.includes("verifyPayPalWebhook"), "PayPal webhook must verify signatures"],
   [files.webhooks.includes("ON CONFLICT (provider, provider_event_id) DO NOTHING"), "webhooks must be idempotent"],
   [files.ai.includes("store: false"), "external AI requests must disable provider storage"],
-  [files.conversationRoute.includes("assessSafety"), "local safety must run before external generation"],
+  [files.orchestrator.includes("assessSafety"), "V4 orchestrator must perform local safety assessment"],
+  [planIndex >= 0 && generationIndex > planIndex, "local V4 planning and safety must run before external generation"],
+  [files.conversationRoute.includes("buildAtlasSafetyReply"), "sensitive responses must remain local"],
   [files.conversationRoute.includes("externalAiConsent"), "external AI must require explicit consent"],
+  [files.policyKernel.includes("automaticExternalActionsAllowed: false"), "automatic external actions must remain disabled"],
+  [files.policyKernel.includes("rawConversationLoggingAllowed: false"), "raw conversation logging must remain disabled"],
+  [files.conversationState.includes("createHmac") && files.conversationState.includes("timingSafeEqual"), "conversation continuity must be signed and timing-safe"],
   [files.maintenance.includes("timingSafeEqual"), "maintenance endpoint secret comparison must be timing safe"],
   [files.passwordReset.includes("UPDATE atlas_sessions SET revoked_at = now()"), "password reset must revoke sessions"],
   [files.schema.includes("token_hash text NOT NULL UNIQUE"), "session hashes must be unique"],

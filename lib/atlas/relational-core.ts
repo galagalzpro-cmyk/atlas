@@ -1,8 +1,8 @@
-import type { AtlasAutonomyDecision } from "./autonomy";
-import type { AtlasConversationTurn } from "./conversation";
-import type { AtlasEmotionalState } from "./emotional-intelligence";
-import type { SafetyAssessment } from "./safety";
-import type { AtlasAudience } from "./types";
+import type { AtlasAutonomyDecision } from "./autonomy.ts";
+import type { AtlasConversationTurn } from "./conversation.ts";
+import type { AtlasEmotionalState } from "./emotional-intelligence.ts";
+import type { SafetyAssessment } from "./safety.ts";
+import type { AtlasAudience } from "./types.ts";
 
 export type AtlasRelationalMode =
   | "receive"
