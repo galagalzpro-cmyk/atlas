@@ -3,11 +3,20 @@ import type { AtlasConversationTurn } from "./conversation.ts";
 
 export type AtlasOpenAIPowerMode = "economy" | "balanced" | "maximum";
 export type AtlasModelLane = "fast" | "balanced" | "deep";
+export type AtlasReasoningEffort = "none" | "low" | "medium" | "high" | "xhigh" | "max";
+export type AtlasReasoningMode = "standard" | "pro";
 
 export interface AtlasModelRoutingDecision {
   lane: AtlasModelLane;
   complexityScore: number;
   reasons: string[];
+}
+
+export interface AtlasInferenceProfile {
+  model: string;
+  fallbackModels: string[];
+  reasoningEffort: AtlasReasoningEffort;
+  reasoningMode: AtlasReasoningMode;
 }
 
 export function scoreAtlasModelComplexity(input: {
@@ -95,7 +104,7 @@ export function chooseAtlasModelLane(input: {
 
   if (input.powerMode === "balanced") {
     return {
-      lane: complexity.score >= 4 ? "balanced" : "fast",
+      lane: complexity.score >= 5 ? "deep" : complexity.score >= 2 ? "balanced" : "fast",
       complexityScore: complexity.score,
       reasons: ["power_mode_balanced", ...complexity.reasons],
     };
@@ -105,5 +114,67 @@ export function chooseAtlasModelLane(input: {
     lane: complexity.score >= 5 ? "deep" : "balanced",
     complexityScore: complexity.score,
     reasons: ["power_mode_maximum", ...complexity.reasons],
+  };
+}
+
+export function chooseAtlasInferenceProfile(
+  lane: AtlasModelLane,
+  powerMode: AtlasOpenAIPowerMode,
+): AtlasInferenceProfile {
+  if (powerMode === "maximum") {
+    if (lane === "deep") {
+      return {
+        model: "gpt-5.6-sol",
+        fallbackModels: ["gpt-5.6-terra", "gpt-5.6-luna"],
+        reasoningEffort: "max",
+        reasoningMode: "pro",
+      };
+    }
+    return {
+      model: "gpt-5.6-sol",
+      fallbackModels: ["gpt-5.6-terra", "gpt-5.6-luna"],
+      reasoningEffort: "xhigh",
+      reasoningMode: "pro",
+    };
+  }
+
+  if (powerMode === "balanced") {
+    if (lane === "deep") {
+      return {
+        model: "gpt-5.6-sol",
+        fallbackModels: ["gpt-5.6-terra"],
+        reasoningEffort: "xhigh",
+        reasoningMode: "standard",
+      };
+    }
+    if (lane === "balanced") {
+      return {
+        model: "gpt-5.6-terra",
+        fallbackModels: ["gpt-5.6-luna", "gpt-5.6-sol"],
+        reasoningEffort: "medium",
+        reasoningMode: "standard",
+      };
+    }
+    return {
+      model: "gpt-5.6-luna",
+      fallbackModels: ["gpt-5.6-terra"],
+      reasoningEffort: "low",
+      reasoningMode: "standard",
+    };
+  }
+
+  if (lane === "deep") {
+    return {
+      model: "gpt-5.6-terra",
+      fallbackModels: ["gpt-5.6-luna"],
+      reasoningEffort: "high",
+      reasoningMode: "standard",
+    };
+  }
+  return {
+    model: "gpt-5.6-luna",
+    fallbackModels: ["gpt-5.6-terra"],
+    reasoningEffort: lane === "balanced" ? "medium" : "low",
+    reasoningMode: "standard",
   };
 }
