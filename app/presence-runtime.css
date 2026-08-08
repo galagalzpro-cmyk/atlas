@@ -1,0 +1,12 @@
+.atlas-sanctuary{--micro-x:0;--micro-y:0;--voice-level:0;--voice-scale:1;--voice-wave:.55}
+.atlas-avatar{transform:translate(calc(-50% + (var(--look-x) + var(--micro-x))*12px),calc(-50% + (var(--look-y) + var(--micro-y))*8px)) rotateY(calc((var(--look-x) + var(--micro-x))*4.2deg)) rotateX(calc((var(--look-y) + var(--micro-y))*-2.8deg)) scale(var(--voice-scale));transition:transform .18s cubic-bezier(.2,.7,.2,1),filter .3s ease;will-change:transform}
+.avatar-iris{transform:translate(calc(-50% + (var(--look-x) + var(--micro-x))*7px),calc(-50% + (var(--look-y) + var(--micro-y))*4px));transition:transform .14s ease-out}
+.atlas-lounge-v6[data-state="listening"] .avatar-halo-a,.atlas-lounge-v6[data-state="listening"] .avatar-halo-b{opacity:calc(.45 + var(--voice-level)*.5);filter:blur(calc(1px + var(--voice-level)*3px))}
+.atlas-lounge-v6[data-state="listening"] .side-wave i{transform:scaleY(var(--voice-wave));opacity:calc(.55 + var(--voice-level)*.4)}
+.atlas-lounge-v6[data-state="listening"] .avatar-digital-mask{opacity:calc(.26 + var(--voice-level)*.26)}
+.atlas-lounge-v6[data-state="listening"] .avatar-energy-field{transform:translate(-50%,-50%) scale(calc(1 + var(--voice-level)*.035));opacity:calc(.48 + var(--voice-level)*.3)}
+.atlas-lounge-v6[data-runtime-quality="balanced"] .avatar-shards i:nth-child(3n),.atlas-lounge-v6[data-runtime-quality="balanced"] .avatar-halo-b{display:none}
+.atlas-lounge-v6[data-runtime-quality="light"] .avatar-shards,.atlas-lounge-v6[data-runtime-quality="light"] .avatar-halo-b,.atlas-lounge-v6[data-runtime-quality="light"] .floor-ring-b{display:none}
+.atlas-lounge-v6[data-runtime-quality="light"] .avatar-energy-field,.atlas-lounge-v6[data-runtime-quality="light"] .sanctuary-mist{filter:none}
+.atlas-lounge-v6[data-runtime-quality="light"] .atlas-avatar{transition:transform .28s ease-out;filter:none}
+@media (prefers-reduced-motion:reduce){.atlas-avatar,.avatar-iris{transform:none!important;transition:none!important}.atlas-lounge-v6[data-state="listening"] .avatar-energy-field{transform:translate(-50%,-50%)!important}}
