@@ -26,6 +26,12 @@ uniform float uLookX;
 uniform float uLookY;
 uniform int uSteps;
 
+#define PI 3.14159265359
+
+float saturate(float x){return clamp(x,0.,1.);}
+mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}
+float smin(float a,float b,float k){float h=saturate(.5+.5*(b-a)/k);return mix(b,a,h)-k*h*(1.-h);}
+
 float hash41(vec4 p){
   p=fract(p*vec4(.1031,.1030,.0973,.1099));
   p+=dot(p,p.wzxy+33.33);
@@ -50,61 +56,208 @@ float fbm4(vec4 p){
   for(int i=0;i<4;i++){v+=a*noise4(p);p.xyz=p.xyz*2.03+vec3(.73,-.41,.29);p.w*=1.91;a*=.5;}
   return v;
 }
+
+float sdEllipsoid(vec3 p,vec3 r){
+  float k0=length(p/r);
+  float k1=length(p/(r*r));
+  return k0*(k0-1.)/max(k1,.0001);
+}
+float sdRoundBox(vec3 p,vec3 b,float r){
+  vec3 q=abs(p)-b+r;
+  return min(max(q.x,max(q.y,q.z)),0.)+length(max(q,0.))-r;
+}
+float sdOcta(vec3 p,float s){p=abs(p);return (p.x+p.y+p.z-s)*.57735027;}
+float sdTorus(vec3 p,vec2 t){vec2 q=vec2(length(p.xz)-t.x,p.y);return length(q)-t.y;}
 float gaussian(vec3 p,vec3 c,vec3 s){vec3 q=(p-c)/s;return exp(-dot(q,q)*2.2);}
-float presenceDensity(vec3 p){
-  p.x-=uLookX*.08; p.y+=uLookY*.05;
-  vec3 headScale=vec3(.82,1.08,.68);
-  vec3 h=p/headScale;
-  float head=exp(-dot(h,h)*2.05);
-  float jaw=gaussian(p,vec3(0.,-.58,.03),vec3(.53,.47,.55));
-  float crown=gaussian(p,vec3(0.,.56,-.04),vec3(.68,.58,.6));
-  float bilateral=gaussian(p,vec3(-.34,.12,.18),vec3(.23,.18,.34))+gaussian(p,vec3(.34,.12,.18),vec3(.23,.18,.34));
-  float axis=gaussian(p,vec3(0.,-.06,.16),vec3(.16,.7,.32));
-  float voiceZone=gaussian(p,vec3(0.,-.46,.21),vec3(.34,.2,.3));
-  float temporal=fbm4(vec4(p*2.25,uTime*.13));
-  float fine=fbm4(vec4(p*5.4+vec3(0.,uTime*.025,0.),uTime*.31));
-  float coherence=mix(.58,1.12,uCohesion);
-  float body=(head*.72+jaw*.22+crown*.12)*coherence;
-  float structure=(bilateral*.16+axis*.06)*uAttention;
-  float voice=(sin((p.y*12.-uTime*7.)+fine*4.)*.5+.5)*voiceZone*uVoice*.34;
-  float turbulence=(temporal-.5)*uTurbulence*.56+(fine-.5)*uTurbulence*.16;
-  return max(0.,body+structure+voice+turbulence-.18);
+
+vec3 pose(vec3 p){
+  p.x-=uLookX*.075;
+  p.y+=uLookY*.048;
+  p.xz*=rot(uLookX*.085);
+  p.yz*=rot(-uLookY*.055);
+  return p;
 }
-vec3 palette(float d,float eye,float neural){
-  vec3 cold=vec3(.42,.67,.96);
-  vec3 pearl=vec3(.88,.93,1.0);
-  vec3 warm=vec3(.88,.67,.44);
-  vec3 base=mix(cold,warm,uWarmth*.68);
-  base=mix(base,pearl,clamp(d*.42+eye*.72,0.,1.));
-  return base+neural*vec3(.12,.2,.42);
+
+float faceSdf(vec3 raw){
+  vec3 p=pose(raw);
+  float skull=sdEllipsoid(p-vec3(0.,.08,0.),vec3(.72,.94,.57));
+  float jaw=sdEllipsoid(p-vec3(0.,-.49,.035),vec3(.52,.46,.47));
+  float chin=sdRoundBox(p-vec3(0.,-.78,.14),vec3(.25,.16,.24),.16);
+  float form=smin(skull,jaw,.22);
+  form=smin(form,chin,.13);
+
+  vec3 lc=p-vec3(-.43,-.11,.255); lc.xy*=rot(-.22); lc.xz*=rot(.13);
+  vec3 rc=p-vec3(.43,-.11,.255); rc.xy*=rot(.22); rc.xz*=rot(-.13);
+  float cheekL=sdRoundBox(lc,vec3(.21,.31,.075),.105);
+  float cheekR=sdRoundBox(rc,vec3(.21,.31,.075),.105);
+  form=smin(form,cheekL,.08);
+  form=smin(form,cheekR,.08);
+
+  vec3 lt=p-vec3(-.57,.31,.08); lt.xy*=rot(-.18);
+  vec3 rt=p-vec3(.57,.31,.08); rt.xy*=rot(.18);
+  float templeL=sdRoundBox(lt,vec3(.12,.30,.13),.08);
+  float templeR=sdRoundBox(rt,vec3(.12,.30,.13),.08);
+  form=smin(form,templeL,.075);
+  form=smin(form,templeR,.075);
+
+  vec3 crownP=p-vec3(0.,.64,-.02);
+  crownP.xz*=rot(.785);
+  float crown=sdOcta(crownP/vec3(1.,.84,1.12),.62);
+  form=smin(form,crown,.11);
+
+  float temporal=fbm4(vec4(p*2.45,uTime*.11));
+  float facets=sin(atan(p.y,p.x)*12.+p.z*8.)*sin(atan(length(p.xz),p.y)*11.);
+  form+=(temporal-.5)*uTurbulence*.035;
+  form+=facets*.010*uCohesion;
+
+  vec3 la=p-vec3(-.29,.18,.47); la.xy*=rot(-.05);
+  vec3 ra=p-vec3(.29,.18,.47); ra.xy*=rot(.05);
+  float apertureL=sdRoundBox(la,vec3(.17,.038,.09),.038);
+  float apertureR=sdRoundBox(ra,vec3(.17,.038,.09),.038);
+  form=max(form,-min(apertureL,apertureR));
+
+  vec3 central=p-vec3(0.,.01,.51);
+  float channel=sdRoundBox(central,vec3(.035,.49,.065),.025);
+  form=max(form,-channel*.72);
+  return form;
 }
+
+vec3 faceNormal(vec3 p){
+  float e=.006;
+  vec2 h=vec2(e,0.);
+  return normalize(vec3(
+    faceSdf(p+h.xyy)-faceSdf(p-h.xyy),
+    faceSdf(p+h.yxy)-faceSdf(p-h.yxy),
+    faceSdf(p+h.yyx)-faceSdf(p-h.yyx)
+  ));
+}
+
+float shellLines(vec3 raw){
+  vec3 p=pose(raw);
+  float longitude=abs(sin(atan(p.x,p.z)*11.));
+  float latitude=abs(sin(atan(length(p.xz),p.y)*13.));
+  float ribs=pow(1.-min(longitude,latitude),22.);
+  float diagonal=pow(1.-abs(sin((p.x+p.y*.72-p.z*.34)*17.)),28.);
+  return saturate(ribs*.72+diagonal*.38);
+}
+
+float innerLattice(vec3 raw){
+  vec3 p=pose(raw)*5.4;
+  float g=sin(p.x)*cos(p.y)+sin(p.y)*cos(p.z)+sin(p.z)*cos(p.x);
+  float line=exp(-abs(g)*10.5);
+  float n=fbm4(vec4(p*.42,uTime*.18));
+  return line*(.62+.38*n);
+}
+
+float crystallineCore(vec3 raw){
+  vec3 p=pose(raw);
+  p.xz*=rot(uTime*.055);
+  p.xy*=rot(-uTime*.037);
+  float d=sdOcta(p-vec3(0.,-.02,-.04),.39);
+  float shell=exp(-abs(d)*34.);
+  float planes=pow(abs(sin((p.x-p.y+p.z)*19.+uTime*.7)),18.);
+  return shell*(.72+.28*planes);
+}
+
+float orbitalGeometry(vec3 raw){
+  vec3 p=raw;
+  vec3 q1=p; q1.yz*=rot(.82+uTime*.035);
+  vec3 q2=p; q2.xy*=rot(1.05-uTime*.026);
+  float a=exp(-abs(sdTorus(q1,vec2(.93,.012)))*78.);
+  float b=exp(-abs(sdTorus(q2,vec2(1.06,.010)))*84.);
+  return a*.55+b*.42;
+}
+
+vec3 materialPalette(float shell,float inner,float core,float attention,float depth,float light){
+  vec3 steel=vec3(.24,.43,.72);
+  vec3 ice=vec3(.64,.82,1.0);
+  vec3 pearl=vec3(.91,.95,1.0);
+  vec3 warm=vec3(.91,.66,.38);
+  vec3 base=mix(steel,warm,uWarmth*.54);
+  base=mix(base,ice,saturate(inner*.52+depth*.22));
+  base=mix(base,pearl,saturate(shell*.42+attention*.66+light*.28));
+  base+=core*vec3(.16,.31,.62);
+  return base;
+}
+
 void main(){
   vec2 frag=vUv*2.-1.;
   frag.x*=uResolution.x/max(uResolution.y,1.);
-  vec3 ro=vec3(0.,0.,3.05);
-  vec3 rd=normalize(vec3(frag*.92,-2.15));
-  float t=.75; vec3 accum=vec3(0.); float alpha=0.;
-  for(int i=0;i<72;i++){
+
+  vec3 ro=vec3(0.,-.015,3.35);
+  vec3 rd=normalize(vec3(frag*.84,-2.42));
+  float t=.88;
+  vec3 accum=vec3(0.);
+  float alpha=0.;
+
+  for(int i=0;i<112;i++){
     if(i>=uSteps) break;
     vec3 p=ro+rd*t;
-    float d=presenceDensity(p)*uDensity;
-    float eyeL=gaussian(p,vec3(-.31,.17,.27),vec3(.15,.11,.22));
-    float eyeR=gaussian(p,vec3(.31,.17,.27),vec3(.15,.11,.22));
-    float eye=(eyeL+eyeR)*uAttention;
-    float neural=pow(max(0.,sin((p.x*8.+p.y*11.+p.z*7.)+uTime*1.7+fbm4(vec4(p*3.,uTime*.2))*5.)),18.)*d;
-    float stepAlpha=clamp((d*.085+eye*.11+neural*.05)*(1.-alpha),0.,.19);
-    vec3 col=palette(d,eye,neural)*(uGlow+.45);
-    col+=eye*vec3(.28,.6,1.15)*uGlow;
+    float sdf=faceSdf(p);
+    float shell=exp(-abs(sdf)*54.)*uCohesion;
+    float innerShell=exp(-abs(sdf+.095)*34.)*.52;
+    float inside=saturate(-sdf*6.5+.32);
+    float lattice=innerLattice(p)*inside;
+    float core=crystallineCore(p)*inside;
+    float ribs=shellLines(p)*shell;
+
+    vec3 posed=pose(p);
+    float attL=gaussian(posed,vec3(-.29,.18,.43),vec3(.15,.075,.16));
+    float attR=gaussian(posed,vec3(.29,.18,.43),vec3(.15,.075,.16));
+    float attention=(attL+attR)*uAttention;
+
+    float voiceZone=gaussian(posed,vec3(0.,-.48,.31),vec3(.37,.22,.24));
+    float voiceWave=(sin(posed.y*18.-uTime*9.+posed.x*5.)*.5+.5)*voiceZone*uVoice;
+
+    float mistNoise=fbm4(vec4(posed*3.1,uTime*.17));
+    float volume=inside*(.025+.055*mistNoise)*uDensity;
+    volume+=voiceWave*.055;
+
+    float orbit=orbitalGeometry(p);
+    float contribution=shell*.11+innerShell*.055+lattice*.038+core*.05+ribs*.10+attention*.115+volume+orbit*.06;
+    contribution*=1.-alpha;
+    float stepAlpha=clamp(contribution,0.,.22);
+
+    float light=.45;
+    float rim=0.;
+    float spec=0.;
+    if(shell>.055){
+      vec3 n=faceNormal(p);
+      vec3 key=normalize(vec3(-.45,.68,.58));
+      vec3 fill=normalize(vec3(.54,-.18,.82));
+      light=.28+.58*max(dot(n,key),0.)+.22*max(dot(n,fill),0.);
+      rim=pow(1.-max(dot(n,-rd),0.),2.4);
+      vec3 h=normalize(key-rd);
+      spec=pow(max(dot(n,h),0.),34.);
+    }
+
+    float depth=saturate((3.05-t)*.44+.35);
+    vec3 col=materialPalette(shell,lattice,core,attention,depth,light)*(uGlow+.42);
+    col*=.58+.72*light;
+    col+=ribs*vec3(.18,.42,.86)*1.05;
+    col+=attention*vec3(.36,.72,1.28)*uGlow;
+    col+=core*vec3(.15,.34,.78)*.86;
+    col+=voiceWave*vec3(.42,.58,1.0)*.72;
+    col+=rim*shell*vec3(.38,.58,.94)*.65;
+    col+=spec*shell*vec3(1.0,.94,.82)*.72;
+    col+=orbit*vec3(.20,.40,.82)*.55;
+
     accum+=col*stepAlpha;
     alpha+=stepAlpha;
-    if(alpha>.975) break;
-    t+=.046;
+    if(alpha>.982) break;
+    t+=.036;
   }
-  float vignette=1.-smoothstep(.55,1.45,length(frag));
-  float halo=exp(-length(frag*vec2(.78,1.05))*2.1)*.12*uGlow;
-  accum+=vec3(.2,.38,.68)*halo;
+
+  float radial=length(frag*vec2(.78,1.02));
+  float deepHalo=exp(-radial*2.15)*.13*uGlow;
+  float secondaryHalo=exp(-abs(radial-.64)*14.)*.025;
+  vec3 backgroundGlow=mix(vec3(.12,.28,.58),vec3(.42,.25,.12),uWarmth*.35);
+  accum+=backgroundGlow*(deepHalo+secondaryHalo);
+
+  float vignette=1.-smoothstep(.72,1.58,radial);
   alpha*=vignette;
-  outColor=vec4(accum,alpha*.96);
+  accum*=.86+.14*vignette;
+  outColor=vec4(accum,alpha*.985);
 }`;
 
 function compileShader(gl: WebGL2RenderingContext, type: number, source: string) {
