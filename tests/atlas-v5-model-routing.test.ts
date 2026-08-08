@@ -36,7 +36,7 @@ function plan(text: string, history: AtlasConversationTurn[] = []) {
       ? "Je ne sais plus quoi décider, plusieurs choses se contredisent et j’ai besoin de comprendre ce qui compte vraiment."
       : "Je garde le fil avec vous et je vais éviter de décider à votre place.",
   }));
-  const text = "Je dois maintenant choisir entre plusieurs options importantes, mais chaque option a des conséquences différentes et j’ai peur de manquer quelque chose.".repeat(5);
+  const text = "Je dois maintenant choisir entre plusieurs options importantes, mais chaque option a des conséquences différentes et j’ai peur de manquer quelque chose. ".repeat(8);
   const turnPlan = plan(text, history);
 
   const route = chooseAtlasModelLane({
