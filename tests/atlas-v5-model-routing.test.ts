@@ -26,7 +26,8 @@ function plan(text: string, history: AtlasConversationTurn[] = []) {
     text,
     powerMode: "maximum",
   });
-  assert.equal(route.lane, "balanced");
+  assert.equal(route.lane, "deep");
+  assert.ok(route.reasons.includes("deep_lane_forced"));
 }
 
 {
@@ -79,5 +80,7 @@ function plan(text: string, history: AtlasConversationTurn[] = []) {
     powerMode: "maximum",
     purpose: "revise",
   });
+  assert.equal(generateRoute.lane, "deep");
+  assert.equal(revisionRoute.lane, "deep");
   assert.ok(revisionRoute.complexityScore >= generateRoute.complexityScore);
 }
