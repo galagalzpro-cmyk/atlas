@@ -13,11 +13,12 @@
     "test:runtime": "node --experimental-strip-types tests/atlas-runtime.test.ts",
     "test:core": "node --experimental-strip-types tests/atlas-core-conversation.test.ts",
     "test:v4": "node --experimental-strip-types tests/atlas-v4-autonomy.test.ts",
+    "test:v5:model-routing": "node --experimental-strip-types tests/atlas-v5-model-routing.test.ts",
     "check:architecture": "node scripts/validate-architecture.mjs",
     "check:security": "node scripts/validate-server-security.mjs",
     "db:migrate": "node --experimental-strip-types scripts/migrate-database.ts",
     "db:bootstrap-admin": "node --experimental-strip-types scripts/bootstrap-admin.ts",
-    "check": "npm run check:architecture && npm run check:security && npm run test:runtime && npm run test:core && npm run test:v4 && npm run typecheck && npm run build"
+    "check": "npm run check:architecture && npm run check:security && npm run test:runtime && npm run test:core && npm run test:v4 && npm run test:v5:model-routing && npm run typecheck && npm run build"
   },
   "dependencies": {
     "next": "16.2.12",
