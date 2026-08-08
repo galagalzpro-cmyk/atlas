@@ -28,7 +28,7 @@ export interface AtlasGeneratedReply {
   revisionCount: 0 | 1;
 }
 
-type ReasoningEffort = "none" | "low" | "medium" | "high";
+type ReasoningEffort = "none" | "low" | "medium" | "high" | "xhigh";
 
 interface AtlasModelCandidate {
   model: string;
@@ -63,10 +63,10 @@ function parseText(raw: string, maxCharacters: number): string {
 }
 
 function maxOutputTokens(plan: AtlasTurnPlan): number {
-  if (plan.relational.responseLength === "developed") return 1100;
-  if (plan.relational.responseLength === "balanced") return 760;
-  if (plan.relational.responseLength === "short") return 480;
-  return 300;
+  if (plan.relational.responseLength === "developed") return 1400;
+  if (plan.relational.responseLength === "balanced") return 900;
+  if (plan.relational.responseLength === "short") return 520;
+  return 320;
 }
 
 function cognitiveInstructions(plan: AtlasTurnPlan): string {
@@ -94,8 +94,9 @@ function cognitiveInstructions(plan: AtlasTurnPlan): string {
 
 function powerMode(): AtlasOpenAIPowerMode {
   const value = process.env.ATLAS_OPENAI_POWER_MODE;
-  if (value === "economy" || value === "maximum") return value;
-  return "balanced";
+  if (value === "economy" || value === "balanced" || value === "maximum") return value;
+  // This V5 preview branch is intentionally the ATLAS Pro test profile.
+  return "maximum";
 }
 
 function candidatesForLane(lane: AtlasModelLane): AtlasModelCandidate[] {
@@ -111,13 +112,14 @@ function candidatesForLane(lane: AtlasModelLane): AtlasModelCandidate[] {
   }
   if (lane === "deep") {
     return [
-      { model: deep, reasoningEffort: null },
+      // gpt-5-pro is the maximum-quality lane and supports high reasoning effort.
+      { model: deep, reasoningEffort: "high" },
       { model: balanced, reasoningEffort: "high" },
       { model: fast, reasoningEffort: "medium" },
     ];
   }
   return [
-    { model: balanced, reasoningEffort: "medium" },
+    { model: balanced, reasoningEffort: "high" },
     { model: fast, reasoningEffort: "medium" },
   ];
 }
