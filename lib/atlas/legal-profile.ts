@@ -65,7 +65,7 @@ export function getAtlasLegalProfile(env: Record<string, string | undefined> = p
   const termsVersion = value(env, "ATLAS_TERMS_VERSION");
   const privacyVersion = value(env, "ATLAS_PRIVACY_VERSION");
 
-  const missing = REQUIRED_FIELDS
+  const missing: string[] = REQUIRED_FIELDS
     .filter(([key]) => !value(env, key))
     .map(([, label]) => label);
 
