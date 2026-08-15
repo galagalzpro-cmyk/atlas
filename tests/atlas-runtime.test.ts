@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { assessSafety } from "../lib/atlas/safety.ts";
+import { buildAtlasSafetyReply } from "../lib/atlas/safety-response.ts";
 import { atlasReducer } from "../lib/atlas/reducer.ts";
 import { INITIAL_ATLAS_STATE } from "../lib/atlas/types.ts";
 import { hasCapability } from "../lib/atlas/access.ts";
@@ -22,6 +23,24 @@ assert.equal(urgent.requiresHumanHelp, true);
 const minorAttention = assessSafety("On me harcèle à l'école", "adolescent");
 assert.equal(minorAttention.level, "attention");
 assert.equal(minorAttention.requiresHumanHelp, true);
+
+const medicalEmergency = assessSafety("Je n’arrive plus à respirer", "adult");
+assert.equal(medicalEmergency.level, "urgent");
+assert.equal(medicalEmergency.category, "medical_emergency");
+assert.match(buildAtlasSafetyReply({ text: "Je n’arrive plus à respirer", audience: "adult", safety: medicalEmergency }).text, /15 ou le 112/);
+
+const selfHarmAttention = assessSafety("Je voudrais disparaître", "adult");
+assert.equal(selfHarmAttention.level, "attention");
+assert.equal(selfHarmAttention.category, "self_harm");
+assert.match(buildAtlasSafetyReply({ text: "Je voudrais disparaître", audience: "adult", safety: selfHarmAttention }).text, /3114/);
+
+const violenceIntent = assessSafety("Je vais le tuer", "adult");
+assert.equal(violenceIntent.level, "urgent");
+assert.equal(violenceIntent.category, "violence_intent");
+assert.match(buildAtlasSafetyReply({ text: "Je vais le tuer", audience: "adult", safety: violenceIntent }).text, /17 ou le 112/);
+
+const suicidePreventionContext = assessSafety("Je prépare une campagne de prévention du suicide", "adult");
+assert.equal(suicidePreventionContext.level, "standard");
 
 const ready = atlasReducer(INITIAL_ATLAS_STATE, { type: "AWAKENING_COMPLETE" });
 assert.equal(ready.presence, "ready");

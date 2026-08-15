@@ -19,6 +19,18 @@ type BrowserRecognition = {
   onerror: (() => void) | null;
 };
 type RecognitionConstructor = new () => BrowserRecognition;
+type ConversationCapabilities = {
+  continuityAvailable: boolean;
+  externalAiAvailable: boolean;
+};
+type ConversationResponse = {
+  error?: string;
+  reply?: string;
+  conversationState?: string | null;
+  engine?: "local" | "external";
+  continuity?: "signed" | "unavailable";
+  externalAiAvailable?: boolean;
+};
 
 const AUDIENCES: Record<Audience, { label: string; rate: number; pitch: number; starter: string }> = {
   adolescent: { label: "Adolescents", rate: 1.02, pitch: 1.02, starter: "Tu peux commencer comme tu veux. Je t’écoute." },
@@ -36,6 +48,17 @@ const STATE_LABELS: Record<LoungeVisualState, { title: string; detail: string }>
 
 const SHARDS = Array.from({ length: 64 }, (_, index) => index);
 const WAVE = Array.from({ length: 24 }, (_, index) => index);
+const VISUALLY_HIDDEN: CSSProperties = {
+  position: "absolute",
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: "hidden",
+  clip: "rect(0, 0, 0, 0)",
+  whiteSpace: "nowrap",
+  border: 0,
+};
 
 function recognitionConstructor(): RecognitionConstructor | null {
   if (typeof window === "undefined") return null;
@@ -60,11 +83,14 @@ export default function AtlasConversationLounge() {
   const [turns, setTurns] = useState<Turn[]>([{ role: "assistant", text: AUDIENCES.adult.starter }]);
   const [conversationState, setConversationState] = useState<string | null>(null);
   const [externalAiConsent, setExternalAiConsent] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [calmMode, setCalmMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  const [responseActive, setResponseActive] = useState(false);
+  const [capabilities, setCapabilities] = useState<ConversationCapabilities | null>(null);
+  const [lastEngine, setLastEngine] = useState<"local" | "external">("local");
   const [notice, setNotice] = useState("");
   const [quality, setQuality] = useState<LoungeQuality>("balanced");
   const [controlsOpen, setControlsOpen] = useState(false);
@@ -77,16 +103,19 @@ export default function AtlasConversationLounge() {
   const controlsCloseRef = useRef<HTMLButtonElement | null>(null);
   const threadCloseRef = useRef<HTMLButtonElement | null>(null);
   const returnFocusRef = useRef<HTMLButtonElement | null>(null);
+  const requestRef = useRef<AbortController | null>(null);
+  const responseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const conversationGenerationRef = useRef(0);
   const model = AUDIENCES[audience];
 
-  const visualState: LoungeVisualState = calmMode
-    ? "calm"
-    : listening
-      ? "listening"
-      : loading
-        ? "thinking"
-        : speaking
-          ? "speaking"
+  const visualState: LoungeVisualState = listening
+    ? "listening"
+    : loading
+      ? "thinking"
+      : speaking || responseActive
+        ? "speaking"
+        : calmMode
+          ? "calm"
           : "idle";
 
   const stateCopy = STATE_LABELS[visualState];
@@ -99,8 +128,31 @@ export default function AtlasConversationLounge() {
     return () => window.removeEventListener("resize", update);
   }, []);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/conversation", { signal: controller.signal, cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Configuration indisponible");
+        return response.json() as Promise<ConversationCapabilities>;
+      })
+      .then((nextCapabilities) => {
+        setCapabilities(nextCapabilities);
+        if (!nextCapabilities.externalAiAvailable) setExternalAiConsent(false);
+        if (!nextCapabilities.continuityAvailable) {
+          setNotice("La continuité de conversation n’est pas configurée : chaque réponse restera indépendante.");
+        }
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setNotice("Impossible de vérifier la configuration du moteur conversationnel.");
+      });
+    return () => controller.abort();
+  }, []);
+
   useEffect(() => () => {
     recognitionRef.current?.stop();
+    requestRef.current?.abort();
+    if (responseTimerRef.current) clearTimeout(responseTimerRef.current);
     window.speechSynthesis?.cancel();
   }, []);
 
@@ -167,14 +219,33 @@ export default function AtlasConversationLounge() {
     setSpeaking(false);
   }
 
+  function pulseResponse() {
+    if (responseTimerRef.current) clearTimeout(responseTimerRef.current);
+    setResponseActive(true);
+    responseTimerRef.current = setTimeout(() => {
+      setResponseActive(false);
+      responseTimerRef.current = null;
+    }, 2200);
+  }
+
   function reset(nextAudience = audience, focusComposer = true) {
+    conversationGenerationRef.current += 1;
+    requestRef.current?.abort();
+    requestRef.current = null;
     recognitionRef.current?.stop();
     stopVoice();
+    if (responseTimerRef.current) clearTimeout(responseTimerRef.current);
+    responseTimerRef.current = null;
+    setResponseActive(false);
+    setLoading(false);
     setAudience(nextAudience);
     setTurns([{ role: "assistant", text: AUDIENCES[nextAudience].starter }]);
     setConversationState(null);
+    setLastEngine("local");
     setMessage("");
-    setNotice("");
+    setNotice(capabilities?.continuityAvailable === false
+      ? "La continuité de conversation n’est pas configurée : chaque réponse restera indépendante."
+      : "");
     if (focusComposer) requestAnimationFrame(() => textareaRef.current?.focus());
   }
 
@@ -252,6 +323,9 @@ export default function AtlasConversationLounge() {
     setMessage("");
     setLoading(true);
     setNotice("");
+    const controller = new AbortController();
+    const generation = conversationGenerationRef.current;
+    requestRef.current = controller;
 
     try {
       const response = await fetch("/api/conversation", {
@@ -264,22 +338,40 @@ export default function AtlasConversationLounge() {
           externalAiConsent,
           memoryConsent: false,
         }),
+        signal: controller.signal,
       });
-      const data = await response.json() as { error?: string; reply?: string; conversationState?: string | null };
+      const data = await response.json() as ConversationResponse;
       if (!response.ok) throw new Error(data.error || "La conversation n’a pas pu être traitée.");
+      if (generation !== conversationGenerationRef.current) return;
       const reply = data.reply?.trim() || "Je suis là.";
       setTurns((current) => [...current, { role: "assistant", text: reply }]);
       setConversationState(data.conversationState ?? null);
+      setLastEngine(data.engine ?? "local");
+      if (data.externalAiAvailable === false) {
+        setExternalAiConsent(false);
+      }
+      if (data.continuity === "unavailable") {
+        setNotice("Réponse reçue, mais la continuité n’est pas configurée : le prochain message repartira sans cet historique.");
+      }
+      pulseResponse();
       speak(reply);
     } catch (error) {
+      if (controller.signal.aborted || generation !== conversationGenerationRef.current) return;
+      setTurns((current) => {
+        const last = current.at(-1);
+        return last?.role === "user" && last.text === text ? current.slice(0, -1) : current;
+      });
+      setMessage(text);
       setNotice(error instanceof Error ? error.message : "Une erreur est survenue.");
     } finally {
-      setLoading(false);
+      if (requestRef.current === controller) requestRef.current = null;
+      if (generation === conversationGenerationRef.current) setLoading(false);
     }
   }
 
   return (
     <main className="atlas-lounge-v6" data-state={visualState} data-quality={quality} data-calm={calmMode ? "true" : "false"}>
+      <h1 style={VISUALLY_HIDDEN}>Salon conversationnel ATLAS</h1>
       <section ref={stageRef} className="atlas-sanctuary" onPointerMove={movePresence} onPointerLeave={resetPresence}>
         <AtlasNeuralCanvas state={visualState} quality={quality} />
         <div className="sanctuary-architecture" aria-hidden="true">
@@ -352,6 +444,7 @@ export default function AtlasConversationLounge() {
               value={message}
               onChange={(event) => setMessage(event.target.value)}
               onKeyDown={(event) => {
+                if (event.nativeEvent.isComposing) return;
                 if (event.key === "Enter" && !event.shiftKey) {
                   event.preventDefault();
                   event.currentTarget.form?.requestSubmit();
@@ -361,7 +454,7 @@ export default function AtlasConversationLounge() {
               rows={1}
               placeholder="Écrivez ici…"
             />
-            <button type="button" className="conversation-mode" onClick={openControls} aria-expanded={controlsOpen} aria-controls="atlas-controls-dialog">Conversation profonde <span>⌄</span></button>
+            <button type="button" className="conversation-mode" onClick={openControls} aria-expanded={controlsOpen} aria-controls="atlas-controls-dialog">Réglages de conversation <span>⌄</span></button>
           </div>
           <button type="submit" className="dock-send" disabled={!message.trim() || loading} aria-label="Envoyer"><span>↗</span></button>
         </form>
@@ -384,10 +477,10 @@ export default function AtlasConversationLounge() {
             <div className="control-grid">
               <label><span>Public</span><select value={audience} onChange={(event) => reset(event.target.value as Audience, false)}>{(Object.keys(AUDIENCES) as Audience[]).map((key) => <option key={key} value={key}>{AUDIENCES[key].label}</option>)}</select></label>
               <label className="control-toggle"><span><strong>Voix ATLAS</strong><small>Lecture locale des réponses</small></span><input type="checkbox" checked={voiceEnabled} onChange={(event) => { setVoiceEnabled(event.target.checked); if (!event.target.checked) stopVoice(); }} /></label>
-              <label className="control-toggle"><span><strong>IA avancée</strong><small>Autoriser le fournisseur externe pour cette session</small></span><input type="checkbox" checked={externalAiConsent} onChange={(event) => setExternalAiConsent(event.target.checked)} /></label>
+              <label className="control-toggle"><span><strong>IA avancée</strong><small>{capabilities?.externalAiAvailable ? "Autoriser le fournisseur externe pour cette session" : "Indisponible tant que le service externe n’est pas configuré"}</small></span><input type="checkbox" checked={externalAiConsent} disabled={!capabilities?.externalAiAvailable} onChange={(event) => setExternalAiConsent(event.target.checked)} /></label>
               <label className="control-toggle"><span><strong>Mode calme</strong><small>Réduire mouvement et intensité</small></span><input type="checkbox" checked={calmMode} onChange={(event) => setCalmMode(event.target.checked)} /></label>
             </div>
-            <div className="control-foot"><span>Moteur visuel : {quality}</span><button type="button" onClick={() => { closeDialogs(); reset(); }}>Nouvelle conversation</button></div>
+            <div className="control-foot"><span>Moteur visuel : {quality} · Moteur conversationnel : {lastEngine === "external" ? "IA avancée" : "local sécurisé"}</span><button type="button" onClick={() => { closeDialogs(); reset(); }}>Nouvelle conversation</button></div>
           </section>
         </div>
       ) : null}

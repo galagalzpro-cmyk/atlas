@@ -13,9 +13,10 @@ export interface AtlasConversationTurn {
 }
 
 type DialogueMode = "welcome" | "listen" | "clarify" | "support" | "decide" | "repair" | "safety";
-type Topic = "work" | "anxiety" | "sadness" | "anger" | "decision" | "digital" | "general";
+type Topic = "work" | "overload" | "anxiety" | "sadness" | "anger" | "decision" | "digital" | "general";
 type QuestionKey =
   | "impact"
+  | "priority"
   | "origin"
   | "duration"
   | "trigger"
@@ -43,6 +44,11 @@ const QUESTION_BANK: Record<QuestionKey, AudienceVersions> = {
     adult: "Qu’est-ce qui vous affecte le plus aujourd’hui ?",
     adolescent: "C’est quoi le plus dur aujourd’hui ?",
     senior: "Qu’est-ce qui vous pèse le plus aujourd’hui ?",
+  },
+  priority: {
+    adult: "Parmi tout ce qui vous sollicite, qu’est-ce qui ne peut vraiment pas attendre aujourd’hui ?",
+    adolescent: "Parmi tout ce que tu as en tête, qu’est-ce qui ne peut vraiment pas attendre aujourd’hui ?",
+    senior: "Parmi tout ce qui vous préoccupe, qu’est-ce qui ne peut réellement pas attendre aujourd’hui ?",
   },
   origin: {
     adult: "À quel moment avez-vous senti que la situation commençait vraiment à changer ?",
@@ -123,6 +129,7 @@ const QUESTION_BANK: Record<QuestionKey, AudienceVersions> = {
 
 const QUESTION_ORDER: Record<Topic, QuestionKey[]> = {
   work: ["impact", "duration", "obstacle", "control", "need", "support", "desiredChange", "smallStep"],
+  overload: ["priority", "impact", "control", "smallStep", "need", "support"],
   anxiety: ["impact", "trigger", "duration", "control", "support", "need", "smallStep"],
   sadness: ["impact", "duration", "support", "need", "desiredChange", "smallStep"],
   anger: ["impact", "trigger", "boundary", "desiredChange", "control", "smallStep"],
@@ -133,6 +140,7 @@ const QUESTION_ORDER: Record<Topic, QuestionKey[]> = {
 
 const QUESTION_MARKERS: Record<QuestionKey, string[]> = {
   impact: ["affecte le plus", "le plus dur aujourd'hui", "le plus dur aujourd’hui", "pèse le plus aujourd'hui", "pèse le plus aujourd’hui"],
+  priority: ["ne peut vraiment pas attendre", "ne peut réellement pas attendre"],
   origin: ["moment où", "moment la situation", "commençait vraiment", "commencé à devenir"],
   duration: ["depuis quand"],
   trigger: ["déclenche le plus", "fait monter la tension", "augmente le plus"],
@@ -245,6 +253,19 @@ function chooseQuestion(topic: Topic, audience: AtlasAudience, history: AtlasCon
 
 function detectTopic(text: string): Topic | null {
   const lower = text.toLowerCase();
+  if (includesAny(lower, [
+    "dispersé",
+    "dispersée",
+    "éparpillé",
+    "éparpillée",
+    "submergé",
+    "submergée",
+    "surcharge",
+    "tout s’accumule",
+    "tout s'accumule",
+    "par quoi commencer",
+    "trop de choses en tête",
+  ])) return "overload";
   if (includesAny(lower, ["choisir", "décider", "décision", "hésite", "hésitation", "deux options", "quoi faire", "que faire"])) return "decision";
   if (includesAny(lower, ["travail", "boulot", "école", "cours", "charge", "débordé", "débordée", "pression professionnelle", "burn out", "burn-out"])) return "work";
   if (includesAny(lower, ["peur", "angoiss", "stress", "panique", "inquiet", "inquiète", "anxieux", "anxieuse"])) return "anxiety";
@@ -315,6 +336,16 @@ function isAcknowledgement(text: string): boolean {
   return /^(merci|d'accord|d’accord|ok|okay|très bien|ça marche|ca marche|oui|non)[.! ]*$/i.test(text.trim());
 }
 
+function isUnableToAnswer(text: string): boolean {
+  return [
+    "je ne sais pas",
+    "je ne sais vraiment pas",
+    "aucune idee",
+    "j arrive pas a repondre",
+    "je n arrive pas a repondre",
+  ].includes(normalizeQuestion(text));
+}
+
 function lead(topic: Topic, audience: AtlasAudience, history: AtlasConversationTurn[]): string {
   const depth = userTurns(history).length;
   const index = depth % 3;
@@ -323,6 +354,11 @@ function lead(topic: Topic, audience: AtlasAudience, history: AtlasConversationT
       { adult: "Je vous suis.", adolescent: "Je te suis.", senior: "Je vous suis." },
       { adult: "D’accord, continuons.", adolescent: "D’accord, on continue.", senior: "D’accord, continuons calmement." },
       { adult: "On peut avancer à partir de là.", adolescent: "On peut avancer à partir de là.", senior: "Nous pouvons avancer à partir de là." },
+    ],
+    overload: [
+      { adult: "Tout semble se présenter en même temps. On peut d’abord réduire le champ.", adolescent: "Tout arrive en même temps. On peut d’abord réduire le champ.", senior: "Plusieurs choses semblent se présenter en même temps. Réduisons d’abord le champ." },
+      { adult: "Je garde le fil. Restons sur une seule priorité.", adolescent: "Je garde le fil. On reste sur une seule priorité.", senior: "Je garde le fil. Restons sur une seule priorité." },
+      { adult: "On n’a pas besoin de tout organiser maintenant.", adolescent: "Pas besoin de tout organiser maintenant.", senior: "Nous n’avons pas besoin de tout organiser maintenant." },
     ],
     anxiety: [
       { adult: "Je reste avec vous là-dessus.", adolescent: "Je reste avec toi là-dessus.", senior: "Je reste avec vous sur ce point." },
@@ -432,7 +468,7 @@ export function buildReply(
     );
   }
 
-  if (includesAny(lower, ["je ne sais pas", "aucune idée", "j'arrive pas à répondre", "j’arrive pas à répondre", "je n'arrive pas à répondre", "je n’arrive pas à répondre"])) {
+  if (isUnableToAnswer(text)) {
     const nextQuestion = chooseQuestion(topic, audience, history);
     return reply(
       `${forAudience(audience, {

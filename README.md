@@ -1,6 +1,6 @@
 # ATLAS
 
-ATLAS est une préproduction privée d’assistance conversationnelle et émotionnelle gouvernée. Cette branche réunit le socle fonctionnel V4, l’expérience visuelle procédurale Presence V6 et le contrôle de lancement RC2 dans une application Next.js unique.
+ATLAS 1.1 RC2 est une préproduction privée d’assistance conversationnelle et émotionnelle gouvernée. Cette branche réunit le socle fonctionnel V4, l’expérience visuelle procédurale Presence V6 et le contrôle de lancement dans une application Next.js unique.
 
 ## Périmètre testable
 
@@ -21,16 +21,16 @@ ATLAS est une préproduction privée d’assistance conversationnelle et émotio
 Prérequis : Node.js 24.
 
 ```bash
-npm install
+npm ci
 npm run check
-npm start
+npm run dev
 ```
 
 Copier `.env.example` vers `.env.local` pour activer les intégrations voulues. Les secrets restent côté serveur ; les seuls identifiants publics sont les identifiants optionnels de mesure et de marketing.
 
 ## Contrôles de livraison
 
-`npm run check` vérifie l’architecture, les invariants de sécurité, les moteurs conversationnels et de gouvernance, le routage de modèles, le contrôle de lancement, les types TypeScript et le build de production.
+`npm run check` vérifie l’architecture, les invariants de sécurité, les moteurs conversationnels et de gouvernance, la continuité signée, le routage de modèles, le contrôle de lancement, les types TypeScript et le build de production.
 
 Le détail de la dernière recette se trouve dans `QUALITY_REPORT.md`. Le runbook de préproduction est dans `docs/ATLAS_PREPRODUCTION_RUNBOOK.md`. Les décisions et données que seul le fondateur peut fournir sont regroupées dans `docs/ATLAS-OWNER-INPUTS.md`.
 

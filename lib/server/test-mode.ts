@@ -25,10 +25,13 @@ const TEST_USERS: AtlasTestUser[] = [
 export function isAtlasTestMode(): boolean {
   if (databaseConfigured()) return false;
 
+  const explicitlyEnabled = process.env.ATLAS_TEST_MODE === "true";
+  if (!explicitlyEnabled) return false;
+
   const vercelPreview = process.env.VERCEL_ENV === "preview";
   const explicitLocalTest = !process.env.VERCEL_ENV
     && (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test")
-    && process.env.ATLAS_TEST_MODE === "true";
+    && explicitlyEnabled;
 
   return vercelPreview || explicitLocalTest;
 }

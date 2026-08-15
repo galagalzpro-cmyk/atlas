@@ -4,7 +4,7 @@ Date de recette : 15 août 2026
 
 Cible : branche `build/atlas-v5-web-experience`
 
-Verdict : **candidate RC2 validée pour une preview privée de test**. La production publique reste volontairement bloquée jusqu’à la fermeture documentée de toutes les portes de lancement.
+Verdict mis à jour : **ATLAS 1.1.0-rc.2 est validée localement comme candidate à une preview privée configurée**. Le déploiement transmis par l’utilisateur n’embarque pas encore ces corrections et n’est pas prêt pour un lancement public. Le rapport détaillé `ATLAS_AUDIT_2026-08-15.md` fait foi.
 
 ## Périmètre livré
 
@@ -45,8 +45,8 @@ Le workflow `ATLAS Quality Gate` exécute cette chaîne sur Node.js 24 avec `npm
 
 ## Recette de la preview Vercel
 
-- preview protégée par Vercel Authentication ;
-- production inchangée ;
+- URL transmise accessible et production inchangée ;
+- continuité conversationnelle absente sur ce déploiement, défaut reproduit puis corrigé dans la candidate 1.1.0-rc.2 ;
 - build Next.js et TypeScript réussis ;
 - ensemble des routes statiques et dynamiques compilé ;
 - métadonnées `noindex`, `nofollow` et en-tête `X-Robots-Tag: noindex` présents ;

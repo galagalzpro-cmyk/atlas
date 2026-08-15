@@ -28,7 +28,7 @@ export interface AtlasGeneratedReply {
   revisionCount: 0 | 1;
 }
 
-type ReasoningEffort = "none" | "low" | "medium" | "high" | "xhigh";
+type ReasoningEffort = "none" | "low" | "medium" | "high" | "xhigh" | "max";
 
 interface AtlasModelCandidate {
   model: string;
@@ -63,10 +63,19 @@ function parseText(raw: string, maxCharacters: number): string {
 }
 
 function maxOutputTokens(plan: AtlasTurnPlan): number {
-  if (plan.relational.responseLength === "developed") return 1400;
-  if (plan.relational.responseLength === "balanced") return 900;
-  if (plan.relational.responseLength === "short") return 520;
-  return 320;
+  // Reasoning tokens share this budget with the visible answer. Keep enough
+  // headroom for a complete structured response, then enforce the product's
+  // visible character limit in parseText.
+  if (plan.relational.responseLength === "developed") return 3200;
+  if (plan.relational.responseLength === "balanced") return 2400;
+  if (plan.relational.responseLength === "short") return 1800;
+  return 1200;
+}
+
+function responseVerbosity(plan: AtlasTurnPlan): "low" | "medium" | "high" {
+  if (plan.relational.responseLength === "developed") return "high";
+  if (plan.relational.responseLength === "balanced") return "medium";
+  return "low";
 }
 
 function cognitiveInstructions(plan: AtlasTurnPlan): string {
@@ -95,32 +104,30 @@ function cognitiveInstructions(plan: AtlasTurnPlan): string {
 function powerMode(): AtlasOpenAIPowerMode {
   const value = process.env.ATLAS_OPENAI_POWER_MODE;
   if (value === "economy" || value === "balanced" || value === "maximum") return value;
-  // This V5 preview branch is intentionally the ATLAS Pro test profile.
-  return "maximum";
+  return "balanced";
 }
 
 function candidatesForLane(lane: AtlasModelLane): AtlasModelCandidate[] {
-  const fast = process.env.ATLAS_OPENAI_FAST_MODEL || "gpt-5-mini";
-  const balanced = process.env.ATLAS_OPENAI_BALANCED_MODEL || process.env.ATLAS_OPENAI_MODEL || "gpt-5.1";
-  const deep = process.env.ATLAS_OPENAI_DEEP_MODEL || "gpt-5-pro";
+  const fast = process.env.ATLAS_OPENAI_FAST_MODEL || "gpt-5.6-luna";
+  const balanced = process.env.ATLAS_OPENAI_BALANCED_MODEL || process.env.ATLAS_OPENAI_MODEL || "gpt-5.6-terra";
+  const deep = process.env.ATLAS_OPENAI_DEEP_MODEL || "gpt-5.6-sol";
 
   if (lane === "fast") {
     return [
       { model: fast, reasoningEffort: "low" },
-      { model: balanced, reasoningEffort: "low" },
+      { model: balanced, reasoningEffort: "medium" },
     ];
   }
   if (lane === "deep") {
     return [
-      // gpt-5-pro is the maximum-quality lane and supports high reasoning effort.
       { model: deep, reasoningEffort: "high" },
-      { model: balanced, reasoningEffort: "high" },
-      { model: fast, reasoningEffort: "medium" },
+      { model: balanced, reasoningEffort: "medium" },
+      { model: fast, reasoningEffort: "low" },
     ];
   }
   return [
-    { model: balanced, reasoningEffort: "high" },
-    { model: fast, reasoningEffort: "medium" },
+    { model: balanced, reasoningEffort: "medium" },
+    { model: fast, reasoningEffort: "low" },
   ];
 }
 
@@ -130,6 +137,7 @@ async function requestCandidate(input: {
   history: AtlasConversationTurn[];
   text: string;
   extraInstructions?: string[];
+  safetyIdentifier?: string;
   signal?: AbortSignal;
 }) {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -148,6 +156,7 @@ async function requestCandidate(input: {
     }),
     max_output_tokens: maxOutputTokens(input.plan),
     text: {
+      verbosity: responseVerbosity(input.plan),
       format: {
         type: "json_schema",
         name: "atlas_reply_v5",
@@ -161,6 +170,8 @@ async function requestCandidate(input: {
       },
     },
   };
+
+  if (input.safetyIdentifier) requestBody.safety_identifier = input.safetyIdentifier;
 
   if (input.candidate.reasoningEffort) {
     requestBody.reasoning = { effort: input.candidate.reasoningEffort };
@@ -209,6 +220,7 @@ async function requestReply(input: {
   text: string;
   purpose?: "generate" | "revise";
   extraInstructions?: string[];
+  safetyIdentifier?: string;
   signal?: AbortSignal;
 }): Promise<Omit<AtlasGeneratedReply, "revisionCount">> {
   if (!input.plan.policy.externalGenerationAllowed) {
@@ -250,6 +262,7 @@ export async function generateAtlasReply(input: {
   plan: AtlasTurnPlan;
   history: AtlasConversationTurn[];
   text: string;
+  safetyIdentifier?: string;
   signal?: AbortSignal;
 }): Promise<AtlasGeneratedReply> {
   return {
@@ -264,6 +277,7 @@ export async function reviseAtlasReply(input: {
   text: string;
   previousReply: string;
   revisionInstructions: string[];
+  safetyIdentifier?: string;
   signal?: AbortSignal;
 }): Promise<AtlasGeneratedReply> {
   if (input.plan.policy.maxRevisions < 1) throw new Error("Revision is not allowed by policy");
