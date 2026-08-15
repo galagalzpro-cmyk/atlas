@@ -15,7 +15,11 @@ export interface AtlasEmergencyResource {
   availability: string;
   urgent: boolean;
   notes: string;
+  source: string;
+  verifiedOn: string;
 }
+
+const VERIFIED_ON = "2026-08-15";
 
 const FRANCE_RESOURCES: AtlasEmergencyResource[] = [
   {
@@ -25,6 +29,8 @@ const FRANCE_RESOURCES: AtlasEmergencyResource[] = [
     availability: "24 h/24, 7 j/7",
     urgent: true,
     notes: "Urgence médicale immédiate en France.",
+    source: "Service-Public.fr",
+    verifiedOn: VERIFIED_ON,
   },
   {
     category: "immediate_police",
@@ -33,6 +39,8 @@ const FRANCE_RESOURCES: AtlasEmergencyResource[] = [
     availability: "24 h/24, 7 j/7",
     urgent: true,
     notes: "Danger, violence ou infraction nécessitant une intervention rapide.",
+    source: "Service-Public.fr",
+    verifiedOn: VERIFIED_ON,
   },
   {
     category: "european_emergency",
@@ -41,14 +49,18 @@ const FRANCE_RESOURCES: AtlasEmergencyResource[] = [
     availability: "24 h/24, 7 j/7",
     urgent: true,
     notes: "Oriente vers le service d’urgence adapté.",
+    source: "Service-Public.fr",
+    verifiedOn: VERIFIED_ON,
   },
   {
     category: "accessible_emergency",
     number: "114",
-    label: "Urgence par écrit, visio ou SMS",
+    label: "Urgence 114 — écrit, visio ou SMS",
     availability: "24 h/24, 7 j/7",
     urgent: true,
-    notes: "Pour les personnes sourdes, malentendantes, sourdaveugles ou aphasiques ; peut aussi être utilisé par écrit lorsqu’il est impossible de parler à voix haute.",
+    notes: "Service d’urgence destiné aux personnes sourdes, malentendantes, sourdaveugles ou aphasiques.",
+    source: "urgence114.fr et Service-Public.fr",
+    verifiedOn: VERIFIED_ON,
   },
   {
     category: "suicide_prevention",
@@ -57,6 +69,8 @@ const FRANCE_RESOURCES: AtlasEmergencyResource[] = [
     availability: "24 h/24, 7 j/7",
     urgent: false,
     notes: "Gratuit en France ; professionnels formés à la prévention du suicide.",
+    source: "3114.fr",
+    verifiedOn: VERIFIED_ON,
   },
   {
     category: "child_protection",
@@ -65,6 +79,8 @@ const FRANCE_RESOURCES: AtlasEmergencyResource[] = [
     availability: "24 h/24, 7 j/7",
     urgent: false,
     notes: "Gratuit et confidentiel pour un enfant en danger ou toute personne inquiète pour un enfant.",
+    source: "allo119.gouv.fr",
+    verifiedOn: VERIFIED_ON,
   },
   {
     category: "harassment",
@@ -73,14 +89,18 @@ const FRANCE_RESOURCES: AtlasEmergencyResource[] = [
     availability: "7 j/7, 9 h–23 h",
     urgent: false,
     notes: "Gratuit et anonyme ; écoute, conseil et orientation.",
+    source: "Ministère de l’Éducation nationale et e-Enfance",
+    verifiedOn: VERIFIED_ON,
   },
   {
     category: "violence_against_women",
     number: "3919",
     label: "Violences Femmes Info",
-    availability: "Selon les horaires officiels en vigueur",
+    availability: "24 h/24, 7 j/7",
     urgent: false,
     notes: "Écoute, information et orientation ; ce numéro ne remplace pas les secours en cas d’urgence immédiate.",
+    source: "arretonslesviolences.gouv.fr",
+    verifiedOn: VERIFIED_ON,
   },
 ];
 
@@ -89,7 +109,9 @@ export function getEmergencyResources(countryCode = "FR"): AtlasEmergencyResourc
 }
 
 export function getImmediateEmergencyLine(countryCode = "FR"): string {
-  if (countryCode.toUpperCase() === "FR") return "Appelez maintenant le 15, le 17 ou le 112. Si vous ne pouvez pas parler, utilisez le 114.";
+  if (countryCode.toUpperCase() === "FR") {
+    return "Appelez maintenant le 15, le 17 ou le 112. Les personnes sourdes, malentendantes, sourdaveugles ou aphasiques peuvent joindre le 114 par écrit, visio ou SMS.";
+  }
   return "Contactez immédiatement les services d’urgence de votre pays.";
 }
 
