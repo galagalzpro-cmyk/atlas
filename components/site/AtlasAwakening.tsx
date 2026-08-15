@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 type AwakeningPhase = "boot" | "ready" | "leaving" | "hidden";
 type AwakeningMode = "first" | "returning";
@@ -24,11 +25,17 @@ function storeVisitState(): void {
 }
 
 export default function AtlasAwakening() {
+  const pathname = usePathname();
   const [phase, setPhase] = useState<AwakeningPhase>("boot");
   const [mode, setMode] = useState<AwakeningMode>("first");
   const previousOverflowRef = useRef<string | null>(null);
 
   useEffect(() => {
+    if (pathname !== "/") {
+      setPhase("hidden");
+      return;
+    }
+
     const directEntry = new URLSearchParams(window.location.search).get("direct") === "1";
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const returning = readVisitState();
@@ -84,7 +91,7 @@ export default function AtlasAwakening() {
       document.body.style.overflow = previousOverflowRef.current ?? "";
       previousOverflowRef.current = null;
     };
-  }, []);
+  }, [pathname]);
 
   function skip() {
     storeVisitState();
@@ -93,7 +100,7 @@ export default function AtlasAwakening() {
     setPhase("hidden");
   }
 
-  if (phase === "hidden") return null;
+  if (pathname !== "/" || phase === "hidden") return null;
 
   return (
     <section
