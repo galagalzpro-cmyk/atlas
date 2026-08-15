@@ -33,6 +33,7 @@ export default function LegalPage() {
             <span>ÉDITEUR</span>
             <h3>{shown(legal.entity)}</h3>
             <p>{shown(legal.legalForm)} · {shown(legal.address)}</p>
+            <p>Téléphone : {shown(legal.legalPhone)}</p>
             <p>Immatriculation : {shown(legal.registrationId)}</p>
             {legal.shareCapital ? <p>Capital : {legal.shareCapital}</p> : null}
             {legal.vatId ? <p>TVA : {legal.vatId}</p> : null}
@@ -47,6 +48,7 @@ export default function LegalPage() {
             <span>HÉBERGEMENT</span>
             <h3>{shown(legal.hostLegalName, "Hébergeur à confirmer")}</h3>
             <p>{shown(legal.hostLegalAddress)}</p>
+            <p>Téléphone : {shown(legal.hostPhone)}</p>
             {legal.hostContact ? <p>{legal.hostContact}</p> : null}
           </article>
         </div>

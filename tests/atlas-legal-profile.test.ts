@@ -6,6 +6,8 @@ import { getAtlasLegalProfile } from "../lib/atlas/legal-profile.ts";
   assert.equal(profile.complete, false);
   assert.equal(profile.identityComplete, false);
   assert.ok(profile.missing.includes("nom légal de l’éditeur"));
+  assert.ok(profile.missing.includes("téléphone public de l’éditeur"));
+  assert.ok(profile.missing.includes("téléphone de l’hébergeur"));
 }
 
 {
@@ -13,6 +15,7 @@ import { getAtlasLegalProfile } from "../lib/atlas/legal-profile.ts";
     ATLAS_LEGAL_ENTITY: "ATLAS SAS",
     ATLAS_LEGAL_FORM: "Société par actions simplifiée",
     ATLAS_LEGAL_ADDRESS: "1 rue Exemple, 75000 Paris",
+    ATLAS_LEGAL_PHONE: "+33 1 23 45 67 89",
     ATLAS_REGISTRATION_ID: "SIREN 000 000 000",
     ATLAS_PUBLICATION_DIRECTOR: "Direction ATLAS",
     ATLAS_SUPPORT_EMAIL: "support@atlas.fr",
@@ -21,6 +24,7 @@ import { getAtlasLegalProfile } from "../lib/atlas/legal-profile.ts";
     ATLAS_HUMAN_RELAY: "Support humain du lundi au vendredi",
     ATLAS_HOST_LEGAL_NAME: "Hébergeur Exemple",
     ATLAS_HOST_LEGAL_ADDRESS: "Adresse hébergeur",
+    ATLAS_HOST_PHONE: "+1 555 123 4567",
     ATLAS_TERMS_VERSION: "2026-08-15",
     ATLAS_PRIVACY_VERSION: "2026-08-15",
   });
@@ -30,10 +34,16 @@ import { getAtlasLegalProfile } from "../lib/atlas/legal-profile.ts";
 
 {
   const profile = getAtlasLegalProfile({
+    ATLAS_LEGAL_PHONE: "12",
     ATLAS_SUPPORT_EMAIL: "adresse-invalide",
+    ATLAS_HOST_PHONE: "abc",
   });
+  assert.equal(profile.identityComplete, false);
   assert.equal(profile.contactsComplete, false);
+  assert.equal(profile.hostingComplete, false);
+  assert.ok(profile.missing.includes("téléphone public valide"));
   assert.ok(profile.missing.includes("adresse de support valide"));
+  assert.ok(profile.missing.includes("téléphone d’hébergeur valide"));
 }
 
 console.log("ATLAS legal profile tests passed.");

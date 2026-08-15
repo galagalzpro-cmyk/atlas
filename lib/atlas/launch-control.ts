@@ -61,6 +61,25 @@ function audienceEnabled(env: NodeJS.ProcessEnv, audience: "adolescent" | "senio
     .includes(audience);
 }
 
+function productionCommerceReady(env: NodeJS.ProcessEnv): boolean {
+  const stripeReady = Boolean(
+    env.STRIPE_SECRET_KEY
+      && !env.STRIPE_SECRET_KEY.startsWith("sk_test_")
+      && env.STRIPE_WEBHOOK_SECRET
+      && env.ATLAS_STRIPE_PRICE_INDIVIDUAL
+      && env.ATLAS_STRIPE_PRICE_PROFESSIONAL
+      && env.ATLAS_STRIPE_PRICE_ORGANIZATION,
+  );
+  const paypalReady = Boolean(env.PAYPAL_CLIENT_ID && env.PAYPAL_CLIENT_SECRET && env.PAYPAL_WEBHOOK_ID);
+  const contractualReady = Boolean(
+    env.ATLAS_SALES_TERMS_VERSION
+      && env.ATLAS_REFUND_POLICY_VERSION
+      && env.ATLAS_CONSUMER_MEDIATOR
+      && validPublicUrl(env.ATLAS_CANCELLATION_URL),
+  );
+  return env.ATLAS_PAYMENT_ENV === "production" && (stripeReady || paypalReady) && contractualReady;
+}
+
 export function getAtlasLaunchControl(env: NodeJS.ProcessEnv): AtlasLaunchControl {
   const checkoutRequested = approved(env.ATLAS_ENABLE_PRODUCTION_CHECKOUT);
   const adolescentLaunch = audienceEnabled(env, "adolescent");
@@ -68,10 +87,10 @@ export function getAtlasLaunchControl(env: NodeJS.ProcessEnv): AtlasLaunchContro
   const legal = getAtlasLegalProfile(env);
 
   const checks: AtlasLaunchCheck[] = [
-    { id: "legal-entity", category: "founder", owner: "founder", label: "Identité juridique complète", description: "Nom légal, forme, adresse, immatriculation et directeur de publication validés.", satisfied: legal.identityComplete, required: true },
+    { id: "legal-entity", category: "founder", owner: "founder", label: "Identité juridique complète", description: "Nom légal, forme, adresse, téléphone, immatriculation et directeur de publication validés.", satisfied: legal.identityComplete, required: true },
     { id: "legal-documents", category: "founder", owner: "founder", label: "Versions contractuelles", description: "Versions définitives des conditions et de la politique de confidentialité.", satisfied: legal.documentsComplete, required: true },
     { id: "public-contacts", category: "founder", owner: "founder", label: "Contacts publics", description: "Support, confidentialité, sécurité et relais humain réellement surveillé.", satisfied: legal.contactsComplete, required: true },
-    { id: "hosting-notice", category: "founder", owner: "founder", label: "Mentions d’hébergement", description: "Identité et adresse contractuelle de l’hébergeur confirmées.", satisfied: legal.hostingComplete, required: true },
+    { id: "hosting-notice", category: "founder", owner: "founder", label: "Mentions d’hébergement", description: "Identité, adresse et téléphone contractuels de l’hébergeur confirmés.", satisfied: legal.hostingComplete, required: true },
     { id: "public-domain", category: "founder", owner: "founder", label: "Domaine public", description: "URL HTTPS définitive utilisée par ATLAS.", satisfied: validPublicUrl(env.ATLAS_APP_URL), required: true },
     { id: "france-scope", category: "founder", owner: "founder", label: "Périmètre France", description: "Le premier lancement reste limité à la France.", satisfied: env.ATLAS_PUBLIC_COUNTRY === "FR", required: true },
     { id: "founder-launch-approval", category: "founder", owner: "founder", label: "Décision de lancement", description: "Autorisation explicite du fondateur après réception des preuves.", satisfied: approved(env.ATLAS_PUBLIC_LAUNCH_APPROVED), required: true },
@@ -98,7 +117,7 @@ export function getAtlasLaunchControl(env: NodeJS.ProcessEnv): AtlasLaunchContro
     { id: "accessibility-review", category: "independent", owner: "independent-review", label: "Revue accessibilité", description: "Recette automatique et humaine sur appareils physiques.", satisfied: approved(env.ATLAS_ACCESSIBILITY_REVIEW_APPROVED), required: true },
     { id: "minor-safety-review", category: "independent", owner: "independent-review", label: "Sécurité des mineurs", description: "Validation dédiée avant activation de l’univers adolescents.", satisfied: approved(env.ATLAS_MINOR_SAFETY_REVIEW_APPROVED), required: adolescentLaunch },
     { id: "senior-review", category: "independent", owner: "independent-review", label: "Validation seniors", description: "Recette dédiée de compréhension, voix et accessibilité avant activation seniors.", satisfied: approved(env.ATLAS_SENIOR_REVIEW_APPROVED), required: seniorLaunch },
-    { id: "production-commerce", category: "commerce", owner: "founder", label: "Commerce de production", description: "Prix, secrets et webhooks de paiement réels validés.", satisfied: present(env.STRIPE_SECRET_KEY) && !env.STRIPE_SECRET_KEY?.startsWith("sk_test_") && present(env.STRIPE_WEBHOOK_SECRET) && present(env.ATLAS_STRIPE_PRICE_INDIVIDUAL), required: checkoutRequested },
+    { id: "production-commerce", category: "commerce", owner: "founder", label: "Commerce de production", description: "Un prestataire de paiement réel, les trois offres, les webhooks, les CGV, la politique de remboursement, la médiation et la résiliation en ligne sont validés.", satisfied: productionCommerceReady(env), required: checkoutRequested },
   ];
 
   const requiredChecks = checks.filter((check) => check.required);

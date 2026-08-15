@@ -14,6 +14,7 @@ Ces éléments sont les seules décisions qui ne peuvent pas être produits auto
 | Nom légal ou raison sociale | `ATLAS_LEGAL_ENTITY` |
 | Forme juridique | `ATLAS_LEGAL_FORM` |
 | Adresse publiable du siège ou de l’activité | `ATLAS_LEGAL_ADDRESS` |
+| Téléphone public de l’éditeur | `ATLAS_LEGAL_PHONE` |
 | SIREN/SIRET ou immatriculation applicable | `ATLAS_REGISTRATION_ID` |
 | Capital social, lorsque requis | `ATLAS_SHARE_CAPITAL` |
 | Directeur de publication | `ATLAS_PUBLICATION_DIRECTOR` |
@@ -34,6 +35,7 @@ Ces éléments sont les seules décisions qui ne peuvent pas être produits auto
 | --- | --- |
 | Nom légal de l’hébergeur | `ATLAS_HOST_LEGAL_NAME` |
 | Adresse contractuelle de l’hébergeur | `ATLAS_HOST_LEGAL_ADDRESS` |
+| Téléphone de l’hébergeur | `ATLAS_HOST_PHONE` |
 | Contact public de l’hébergeur, si applicable | `ATLAS_HOST_CONTACT` |
 | Version des conditions | `ATLAS_TERMS_VERSION` |
 | Version de la politique de confidentialité | `ATLAS_PRIVACY_VERSION` |
@@ -46,6 +48,10 @@ Ces champs alimentent automatiquement `/mentions-legales`, `/conditions`, `/conf
 - offres conservées au lancement ;
 - prix TTC, périodicité et politique d’essai ;
 - politique d’annulation et de remboursement ;
+- version des CGV (`ATLAS_SALES_TERMS_VERSION`) ;
+- version de la politique de remboursement (`ATLAS_REFUND_POLICY_VERSION`) ;
+- médiateur de la consommation (`ATLAS_CONSUMER_MEDIATOR`) ;
+- URL de résiliation électronique (`ATLAS_CANCELLATION_URL`) ;
 - décision d’activer ou non Stripe et PayPal en production.
 
 ### Décision de lancement
