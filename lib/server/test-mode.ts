@@ -23,7 +23,14 @@ const TEST_USERS: AtlasTestUser[] = [
 ];
 
 export function isAtlasTestMode(): boolean {
-  return process.env.ATLAS_TEST_MODE === "true" || !databaseConfigured();
+  if (databaseConfigured()) return false;
+
+  const vercelPreview = process.env.VERCEL_ENV === "preview";
+  const explicitLocalTest = !process.env.VERCEL_ENV
+    && (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test")
+    && process.env.ATLAS_TEST_MODE === "true";
+
+  return vercelPreview || explicitLocalTest;
 }
 
 export function listAtlasTestUsers(): AtlasTestUser[] {
