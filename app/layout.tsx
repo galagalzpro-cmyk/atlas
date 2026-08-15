@@ -1,14 +1,24 @@
 import type { Metadata, Viewport } from "next";
+import AtlasPresenceRuntimeBridge from "../components/atlas/lounge/AtlasPresenceRuntimeBridge";
+import AtlasConsentManager from "../components/site/AtlasConsentManager";
 import "./globals.css";
+import "./site.css";
 import "./audience.css";
 import "./conversation.css";
+import "./presence-runtime.css";
 import "./journey.css";
 import "./portal.css";
+import "./awakening.css";
 
 export const metadata: Metadata = {
   title: "ATLAS — Intelligence émotionnelle vivante",
   description:
     "ATLAS transforme les moments complexes en compréhension, orientation et prochain pas concret.",
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+  },
 };
 
 export const viewport: Viewport = {
@@ -21,7 +31,11 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="fr">
-      <body>{children}</body>
+      <body>
+        {children}
+        <AtlasConsentManager />
+        <AtlasPresenceRuntimeBridge />
+      </body>
     </html>
   );
 }

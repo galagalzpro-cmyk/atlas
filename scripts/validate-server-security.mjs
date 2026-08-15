@@ -13,8 +13,11 @@ const files = {
   orchestrator: await readFile("lib/atlas/orchestrator.ts", "utf8"),
   policyKernel: await readFile("lib/atlas/policy-kernel.ts", "utf8"),
   conversationState: await readFile("lib/server/conversation-state.ts", "utf8"),
+  testMode: await readFile("lib/server/test-mode.ts", "utf8"),
   ai: await readFile("lib/server/ai.ts", "utf8"),
   maintenance: await readFile("app/api/maintenance/route.ts", "utf8"),
+  health: await readFile("app/api/health/route.ts", "utf8"),
+  consentManager: await readFile("components/site/AtlasConsentManager.tsx", "utf8"),
   passwordReset: await readFile("lib/server/password-reset.ts", "utf8"),
   schema: `${await readFile("database/001_foundation.sql", "utf8")}\n${await readFile("database/002_operations.sql", "utf8")}`,
 };
@@ -45,11 +48,18 @@ const requirements = [
   [files.policyKernel.includes("automaticExternalActionsAllowed: false"), "automatic external actions must remain disabled"],
   [files.policyKernel.includes("rawConversationLoggingAllowed: false"), "raw conversation logging must remain disabled"],
   [files.conversationState.includes("createHmac") && files.conversationState.includes("timingSafeEqual"), "conversation continuity must be signed and timing-safe"],
+  [files.testMode.includes("if (databaseConfigured()) return false;"), "test identities must be disabled when a database is configured"],
+  [files.testMode.includes('process.env.VERCEL_ENV === "preview"'), "test identities must be scoped to Vercel preview"],
+  [files.testMode.includes('process.env.ATLAS_TEST_MODE === "true"') && files.testMode.includes('process.env.NODE_ENV === "development"'), "local test identities must require explicit non-production configuration"],
+  [!files.testMode.includes("|| !databaseConfigured()"), "a missing database must never automatically enable test identities"],
   [files.maintenance.includes("timingSafeEqual"), "maintenance endpoint secret comparison must be timing safe"],
   [files.passwordReset.includes("UPDATE atlas_sessions SET revoked_at = now()"), "password reset must revoke sessions"],
   [files.schema.includes("token_hash text NOT NULL UNIQUE"), "session hashes must be unique"],
   [files.schema.includes("UNIQUE (provider, provider_event_id)"), "provider webhook identifiers must be unique"],
   [files.schema.includes("revoked_at timestamptz"), "sessions must support revocation"],
+  [files.health.includes('"Cache-Control": "no-store') && !files.health.includes("process.env"), "health endpoint must be uncached and must not expose configuration"],
+  [files.consentManager.includes("DEFAULT_CONSENT") && files.consentManager.includes("analytics: false") && files.consentManager.includes("marketing: false"), "analytics and marketing consent must default to denied"],
+  [files.consentManager.includes("googleLoaderId ?") && files.consentManager.includes("consent.marketing && metaPixelId"), "external trackers must be loaded only after category consent"],
 ];
 
 const failures = requirements.filter(([passed]) => !passed).map(([, message]) => message);

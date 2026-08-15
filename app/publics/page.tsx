@@ -1,0 +1,9 @@
+import Link from "next/link";
+import { AtlasSiteShell, SitePageHero } from "../../components/site/AtlasSiteShell";
+
+const AUDIENCES=[
+["Adolescents","Un rythme plus simple, des formulations directes, une vigilance accrue sur le consentement, la sécurité, les adultes de confiance et les situations à risque."],
+["Adultes","Une expérience capable d’aller de l’écoute à la clarification, à la décision et à l’action, sans imposer une lecture psychologique."],
+["Seniors","Une interface plus lisible, un rythme plus posé, des interactions vocales renforcées et une attention spécifique à l’accessibilité et à la compréhension."],
+] as const;
+export default function AudiencesPage(){return <AtlasSiteShell><SitePageHero eyebrow="PUBLICS" title="Le même noyau. Trois expériences réellement distinctes." lead="ATLAS ne doit pas appliquer une simple variation cosmétique selon l’âge. Le langage, le rythme, l’interface, les exercices, l’accessibilité et les protections doivent être adaptés à chaque public." actions={<><Link className="site-primary-button" href="/conversation">Tester le salon</Link><Link className="site-link-button" href="/experience">Voir l’expérience</Link></>}/><section className="site-section site-section-tight"><div className="site-audience-grid">{AUDIENCES.map(([name,desc],i)=><article className="site-audience" key={name}><span className="site-metric">0{i+1}</span><h3>{name}</h3><p>{desc}</p></article>)}</div></section><section className="site-section"><div className="site-section-head"><p className="site-eyebrow">ADAPTATION</p><h2>ATLAS doit devenir caméléon sans perdre son identité.</h2><p>La forme change avec la personne. Les principes fondamentaux — dignité, sécurité, transparence, contrôle et non-dépendance — restent constants.</p></div></section></AtlasSiteShell>}
