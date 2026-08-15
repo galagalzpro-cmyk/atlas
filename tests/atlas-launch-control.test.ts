@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { getAtlasLaunchControl } from "../lib/atlas/launch-control.ts";
 
 {
-  const status = getAtlasLaunchControl({});
+  const status = getAtlasLaunchControl({ NODE_ENV: "test" });
   assert.equal(status.target, "adult-france");
   assert.equal(status.phase, "private-preview");
   assert.equal(status.ready, false);
@@ -12,7 +12,7 @@ import { getAtlasLaunchControl } from "../lib/atlas/launch-control.ts";
 }
 
 {
-  const status = getAtlasLaunchControl({ ATLAS_LAUNCH_AUDIENCES: "adult,adolescent,senior", ATLAS_ENABLE_PRODUCTION_CHECKOUT: "true" });
+  const status = getAtlasLaunchControl({ NODE_ENV: "test", ATLAS_LAUNCH_AUDIENCES: "adult,adolescent,senior", ATLAS_ENABLE_PRODUCTION_CHECKOUT: "true" });
   assert.ok(status.blockers.some((item) => item.id === "minor-safety-review"));
   assert.ok(status.blockers.some((item) => item.id === "senior-review"));
   assert.ok(status.blockers.some((item) => item.id === "production-commerce"));
@@ -20,6 +20,7 @@ import { getAtlasLaunchControl } from "../lib/atlas/launch-control.ts";
 
 {
   const ready = getAtlasLaunchControl({
+    NODE_ENV: "test",
     ATLAS_LEGAL_ENTITY: "ATLAS SAS",
     ATLAS_TERMS_VERSION: "2026-08-15",
     ATLAS_PRIVACY_VERSION: "2026-08-15",
