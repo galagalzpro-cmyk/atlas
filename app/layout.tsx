@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import AtlasPresenceRuntimeBridge from "../components/atlas/lounge/AtlasPresenceRuntimeBridge";
+import AtlasAwakening from "../components/site/AtlasAwakening";
 import AtlasConsentManager from "../components/site/AtlasConsentManager";
 import "./globals.css";
 import "./site.css";
@@ -8,6 +9,7 @@ import "./conversation.css";
 import "./presence-runtime.css";
 import "./journey.css";
 import "./portal.css";
+import "./awakening.css";
 
 export const metadata: Metadata = {
   title: "ATLAS — Intelligence émotionnelle vivante",
@@ -31,6 +33,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="fr">
       <body>
+        <AtlasAwakening />
         {children}
         <AtlasConsentManager />
         <AtlasPresenceRuntimeBridge />

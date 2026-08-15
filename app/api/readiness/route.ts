@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getCommerceReadiness } from "../../../lib/atlas/commerce";
+import { getAtlasLaunchControl } from "../../../lib/atlas/launch-control";
 import { getAtlasPublicReadinessFromEnv } from "../../../lib/atlas/public-readiness";
 import { databaseConfigured, getDatabase } from "../../../lib/server/database";
+import { transactionalEmailConfigured } from "../../../lib/server/mail";
 import { isAtlasTestMode } from "../../../lib/server/test-mode";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +11,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const commerce = getCommerceReadiness(process.env);
   const publicReadiness = getAtlasPublicReadinessFromEnv(process.env);
+  const launchControl = getAtlasLaunchControl(process.env);
   const testMode = isAtlasTestMode();
   let database = false;
 
@@ -34,7 +37,7 @@ export async function GET() {
     administration: database,
     localSafety: true,
     externalAi: Boolean(process.env.OPENAI_API_KEY),
-    transactionalEmail: Boolean(process.env.RESEND_API_KEY && process.env.ATLAS_EMAIL_FROM),
+    transactionalEmail: transactionalEmailConfigured(),
     stripeSandbox: Boolean(process.env.ATLAS_PAYMENT_ENV === "sandbox" && process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_")),
     paypalSandbox: Boolean(process.env.ATLAS_PAYMENT_ENV === "sandbox" && process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET),
     verifiedWebhooks: Boolean(process.env.STRIPE_WEBHOOK_SECRET || process.env.PAYPAL_WEBHOOK_ID),
@@ -51,7 +54,8 @@ export async function GET() {
     && capabilities.authentication
     && capabilities.scheduledMaintenance;
 
-  const status = publicReadiness.ready
+  const readyForPublicLaunch = publicReadiness.ready && launchControl.ready;
+  const status = readyForPublicLaunch
     ? "public-ready"
     : readyForPreproduction
       ? "preproduction-ready"
@@ -64,9 +68,21 @@ export async function GET() {
     status,
     readyForFunctionalTesting,
     readyForPreproduction,
-    readyForPublicLaunch: publicReadiness.ready,
+    readyForPublicLaunch,
     publicScopeReady: publicReadiness.scopeReady,
-    publicLaunchBlockers: publicReadiness.blockers,
+    publicLaunchBlockers: Array.from(new Set([
+      ...publicReadiness.blockers,
+      ...launchControl.blockers.map((item) => item.id),
+    ])),
+    launchControl: {
+      target: launchControl.target,
+      phase: launchControl.phase,
+      completed: launchControl.completed,
+      total: launchControl.total,
+      progress: launchControl.progress,
+      categories: launchControl.categories,
+      blockers: launchControl.blockers.map(({ id, category, owner, label }) => ({ id, category, owner, label })),
+    },
     timestamp: new Date().toISOString(),
     capabilities,
     missingCommerceRequirements: commerce.missingRequirements,
