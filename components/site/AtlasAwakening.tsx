@@ -26,7 +26,8 @@ function storeVisitState(): void {
 
 export default function AtlasAwakening() {
   const pathname = usePathname();
-  const [phase, setPhase] = useState<AwakeningPhase>("boot");
+  // Fail open: the server-rendered page must remain usable if hydration fails.
+  const [phase, setPhase] = useState<AwakeningPhase>("hidden");
   const [mode, setMode] = useState<AwakeningMode>("first");
   const previousOverflowRef = useRef<string | null>(null);
 
@@ -47,6 +48,7 @@ export default function AtlasAwakening() {
       return;
     }
 
+    setPhase("boot");
     previousOverflowRef.current = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 

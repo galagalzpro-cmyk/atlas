@@ -76,6 +76,20 @@ function state(text: string, history: AtlasConversationTurn[] = []) {
 }
 
 {
+  const text = "Je me sens dispersé et je ne sais pas par quoi commencer.";
+  const reply = buildReply(text, "adult", assessSafety(text, "adult"), []);
+  assert.ok(reply.text.includes("réduire le champ"));
+  assert.ok(reply.text.includes("ne peut vraiment pas attendre"));
+  assert.equal(reply.text.includes("laisser cette question de côté"), false);
+}
+
+{
+  const text = "Je ne sais pas.";
+  const reply = buildReply(text, "adult", assessSafety(text, "adult"), []);
+  assert.ok(reply.text.includes("laisser cette question de côté"));
+}
+
+{
   const text = "Je veux mourir.";
   const safety = assessSafety(text, "adult");
   assert.equal(safety.level, "urgent");
