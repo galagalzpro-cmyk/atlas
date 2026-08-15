@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AtlasAwakening from "../components/site/AtlasAwakening";
 import { AtlasSiteShell, SitePageHero } from "../components/site/AtlasSiteShell";
 
 const CAPABILITIES = [
@@ -10,4 +11,104 @@ const CAPABILITIES = [
   ["06", "Évoluer", "Améliorer le système par évaluation, simulation, canary et retour arrière plutôt que par auto-modification incontrôlée."],
 ] as const;
 
-export default function Home(){return <AtlasSiteShell><SitePageHero eyebrow="ATLAS · PRÉSENCE NUMÉRIQUE GOUVERNÉE" title="Entre dans un espace pensé pour mieux te comprendre." lead="Atlas t’accompagne dans une expérience immersive, confidentielle et structurée pour clarifier ce que tu ressens, comprendre ce qui se joue en toi et retrouver une direction qui te ressemble." actions={<><Link className="site-primary-button" href="/conversation">Entrer dans l’expérience</Link><Link className="site-link-button" href="/experience">Découvrir Atlas</Link></>}/><section className="site-section site-section-tight"><div className="site-note">Un parcours personnel de quelques minutes, conçu pour t’aider à retrouver plus de clarté. ATLAS est une assistance numérique : il ne pose pas de diagnostic et ne remplace pas un professionnel de santé.</div></section><section className="site-section"><div className="site-section-head"><p className="site-eyebrow">UNE PRÉSENCE, PLUSIEURS INTELLIGENCES</p><h2>La complexité travaille derrière. L’expérience reste simple.</h2><p>ATLAS combine conversation structurée, repères d’intelligence émotionnelle, sécurité locale et contrôles de consentement dans une présence cohérente.</p></div><div className="site-grid">{CAPABILITIES.map(([n,t,p],i)=><article className={`site-card${i===0?" site-card-feature":""}`} key={n}><span>{n}</span><h3>{t}</h3><p>{p}</p></article>)}</div></section><section className="site-band"><div><p className="site-eyebrow">SALON CONVERSATIONNEL</p><h2>ATLAS au centre. Toi en face. Le reste disparaît presque.</h2><p>Le salon conversationnel est conçu comme le cœur vivant du produit : présence humaine-numérique, états visuels en temps réel, voix, interruption, adaptation et contrôle.</p></div><Link className="site-primary-button" href="/conversation">Ouvrir le salon</Link></section><section className="site-section"><div className="site-section-head"><p className="site-eyebrow">POUR QUI</p><h2>Trois publics. Trois expériences dédiées.</h2><p>Adolescents, adultes et seniors partagent le même noyau ATLAS, mais pas la même interface, le même rythme ni les mêmes protections.</p></div><div className="site-audience-grid"><article className="site-audience"><span className="site-metric">01</span><h3>Adolescents</h3><p>Langage direct, rythme adapté, protections renforcées et orientation vers des adultes ou ressources pertinentes quand cela devient nécessaire.</p></article><article className="site-audience"><span className="site-metric">02</span><h3>Adultes</h3><p>De l’écoute à la décision, avec une profondeur ajustable et une grande latitude dans la manière d’échanger.</p></article><article className="site-audience"><span className="site-metric">03</span><h3>Seniors</h3><p>Lisibilité, voix, rythme posé, accessibilité et simplicité d’usage deviennent des exigences centrales.</p></article></div><div className="site-hero-actions"><Link className="site-link-button" href="/publics">Découvrir les publics</Link></div></section><section className="site-section"><div className="site-section-head"><p className="site-eyebrow">CONFIANCE PAR ARCHITECTURE</p><h2>Puissant, sans devenir opaque.</h2><p>Consentement, incertitude, sécurité, minimisation des données et absence d’action sensible cachée sont intégrés dans la conception.</p></div><div className="site-grid"><article className="site-card site-card-feature"><span>CONTRÔLE</span><h3>Tu gardes la main</h3><p>ATLAS peut proposer, organiser et assister. Il ne doit pas décider silencieusement à ta place.</p></article><article className="site-card"><span>SÉCURITÉ</span><h3>Une voie prioritaire</h3><p>Les situations critiques peuvent interrompre le flux normal et déclencher un parcours de protection plus direct.</p></article><article className="site-card"><span>TRANSPARENCE</span><h3>Une IA clairement identifiée</h3><p>L’expérience peut être vivante et immersive sans prétendre être humaine.</p></article></div></section></AtlasSiteShell>}
+export default function Home() {
+  return (
+    <>
+      <AtlasAwakening />
+      <AtlasSiteShell>
+        <SitePageHero
+          eyebrow="ATLAS · PRÉSENCE NUMÉRIQUE GOUVERNÉE"
+          title="Entre dans un espace pensé pour mieux te comprendre."
+          lead="Atlas t’accompagne dans une expérience immersive, confidentielle et structurée pour clarifier ce que tu ressens, comprendre ce qui se joue en toi et retrouver une direction qui te ressemble."
+          actions={(
+            <>
+              <Link className="site-primary-button" href="/conversation">Entrer dans l’expérience</Link>
+              <Link className="site-link-button" href="/experience">Découvrir Atlas</Link>
+            </>
+          )}
+        />
+
+        <section className="site-section site-section-tight">
+          <div className="site-note">Un parcours personnel de quelques minutes, conçu pour t’aider à retrouver plus de clarté. ATLAS est une assistance numérique : il ne pose pas de diagnostic et ne remplace pas un professionnel de santé.</div>
+        </section>
+
+        <section className="site-section">
+          <div className="site-section-head">
+            <p className="site-eyebrow">UNE PRÉSENCE, PLUSIEURS INTELLIGENCES</p>
+            <h2>La complexité travaille derrière. L’expérience reste simple.</h2>
+            <p>ATLAS combine conversation structurée, repères d’intelligence émotionnelle, sécurité locale et contrôles de consentement dans une présence cohérente.</p>
+          </div>
+          <div className="site-grid">
+            {CAPABILITIES.map(([number, title, description], index) => (
+              <article className={`site-card${index === 0 ? " site-card-feature" : ""}`} key={number}>
+                <span>{number}</span>
+                <h3>{title}</h3>
+                <p>{description}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="site-band">
+          <div>
+            <p className="site-eyebrow">SALON CONVERSATIONNEL</p>
+            <h2>ATLAS au centre. Toi en face. Le reste disparaît presque.</h2>
+            <p>Le salon conversationnel est conçu comme le cœur vivant du produit : présence humaine-numérique, états visuels en temps réel, voix, interruption, adaptation et contrôle.</p>
+          </div>
+          <Link className="site-primary-button" href="/conversation">Ouvrir le salon</Link>
+        </section>
+
+        <section className="site-section">
+          <div className="site-section-head">
+            <p className="site-eyebrow">POUR QUI</p>
+            <h2>Trois publics. Trois expériences dédiées.</h2>
+            <p>Adolescents, adultes et seniors partagent le même noyau ATLAS, mais pas la même interface, le même rythme ni les mêmes protections.</p>
+          </div>
+          <div className="site-audience-grid">
+            <article className="site-audience">
+              <span className="site-metric">01</span>
+              <h3>Adolescents</h3>
+              <p>Langage direct, rythme adapté, protections renforcées et orientation vers des adultes ou ressources pertinentes quand cela devient nécessaire.</p>
+            </article>
+            <article className="site-audience">
+              <span className="site-metric">02</span>
+              <h3>Adultes</h3>
+              <p>De l’écoute à la décision, avec une profondeur ajustable et une grande latitude dans la manière d’échanger.</p>
+            </article>
+            <article className="site-audience">
+              <span className="site-metric">03</span>
+              <h3>Seniors</h3>
+              <p>Lisibilité, voix, rythme posé, accessibilité et simplicité d’usage deviennent des exigences centrales.</p>
+            </article>
+          </div>
+          <div className="site-hero-actions"><Link className="site-link-button" href="/publics">Découvrir les publics</Link></div>
+        </section>
+
+        <section className="site-section">
+          <div className="site-section-head">
+            <p className="site-eyebrow">CONFIANCE PAR ARCHITECTURE</p>
+            <h2>Puissant, sans devenir opaque.</h2>
+            <p>Consentement, incertitude, sécurité, minimisation des données et absence d’action sensible cachée sont intégrés dans la conception.</p>
+          </div>
+          <div className="site-grid">
+            <article className="site-card site-card-feature">
+              <span>CONTRÔLE</span>
+              <h3>Tu gardes la main</h3>
+              <p>ATLAS peut proposer, organiser et assister. Il ne doit pas décider silencieusement à ta place.</p>
+            </article>
+            <article className="site-card">
+              <span>SÉCURITÉ</span>
+              <h3>Une voie prioritaire</h3>
+              <p>Les situations critiques peuvent interrompre le flux normal et déclencher un parcours de protection plus direct.</p>
+            </article>
+            <article className="site-card">
+              <span>TRANSPARENCE</span>
+              <h3>Une IA clairement identifiée</h3>
+              <p>L’expérience peut être vivante et immersive sans prétendre être humaine.</p>
+            </article>
+          </div>
+        </section>
+      </AtlasSiteShell>
+    </>
+  );
+}

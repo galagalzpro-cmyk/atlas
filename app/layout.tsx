@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import AtlasPresenceRuntimeBridge from "../components/atlas/lounge/AtlasPresenceRuntimeBridge";
-import AtlasAwakening from "../components/site/AtlasAwakening";
 import AtlasConsentManager from "../components/site/AtlasConsentManager";
 import "./globals.css";
 import "./site.css";
@@ -33,7 +32,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="fr">
       <body>
-        <AtlasAwakening />
         {children}
         <AtlasConsentManager />
         <AtlasPresenceRuntimeBridge />
