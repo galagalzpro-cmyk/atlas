@@ -5,6 +5,7 @@ import { getAtlasPublicReadinessFromEnv } from "../../../lib/atlas/public-readin
 import { databaseConfigured, getDatabase } from "../../../lib/server/database";
 import { transactionalEmailConfigured } from "../../../lib/server/mail";
 import { isAtlasTestMode } from "../../../lib/server/test-mode";
+import { conversationStateConfigured } from "../../../lib/server/conversation-state";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export async function GET() {
   const publicReadiness = getAtlasPublicReadinessFromEnv(process.env);
   const launchControl = getAtlasLaunchControl(process.env);
   const testMode = isAtlasTestMode();
+  const conversationContinuity = conversationStateConfigured();
   let database = false;
 
   if (databaseConfigured()) {
@@ -27,7 +29,8 @@ export async function GET() {
   const capabilities = {
     application: true,
     testMode,
-    localConversation: true,
+    localConversation: conversationContinuity,
+    conversationContinuity,
     testAuthentication: testMode,
     testProfessionalWorkspace: testMode,
     testAdministration: testMode,
@@ -36,7 +39,7 @@ export async function GET() {
     professionalWorkspace: database,
     administration: database,
     localSafety: true,
-    externalAi: Boolean(process.env.OPENAI_API_KEY),
+    externalAi: Boolean(process.env.OPENAI_API_KEY) && conversationContinuity,
     transactionalEmail: transactionalEmailConfigured(),
     stripeSandbox: Boolean(process.env.ATLAS_PAYMENT_ENV === "sandbox" && process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_")),
     paypalSandbox: Boolean(process.env.ATLAS_PAYMENT_ENV === "sandbox" && process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET),

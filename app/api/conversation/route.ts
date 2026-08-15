@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import type { AtlasAudience } from "../../../lib/atlas/types";
 import type { AtlasConversationTurn } from "../../../lib/atlas/conversation";
@@ -39,16 +39,34 @@ function publicResponse(input: {
   conversationState: string | null;
   labMode: boolean;
   diagnostics?: Record<string, unknown>;
+  externalAiAvailable: boolean;
 }) {
   return {
     reply: input.reply,
     safetyLevel: input.safetyLevel,
     traceId: input.traceId,
     conversationState: input.conversationState,
+    engine: input.source === "external" || input.source === "external_revised" ? "external" : "local",
+    continuity: input.conversationState ? "signed" : "unavailable",
+    externalAiAvailable: input.externalAiAvailable,
     ...(input.labMode
       ? { lab: { source: input.source, ...input.diagnostics } }
       : {}),
   };
+}
+
+function buildSafetyIdentifier(identifier: string): string | undefined {
+  const key = process.env.ATLAS_CONVERSATION_STATE_SECRET?.trim();
+  if (!key || key.length < 32) return undefined;
+  return createHmac("sha256", key).update(`atlas:${identifier}`).digest("hex");
+}
+
+export async function GET() {
+  const continuityAvailable = conversationStateConfigured();
+  return NextResponse.json({
+    continuityAvailable,
+    externalAiAvailable: Boolean(process.env.OPENAI_API_KEY) && continuityAvailable,
+  }, { headers: { "Cache-Control": "no-store" } });
 }
 
 function localFallbackText(plan: ReturnType<typeof planAtlasTurn>): string {
@@ -117,7 +135,11 @@ export async function POST(request: Request) {
     labMode?: unknown;
   };
 
-  const text = typeof body?.text === "string" ? body.text.trim().slice(0, 6000) : "";
+  const rawText = typeof body?.text === "string" ? body.text.trim() : "";
+  if (rawText.length > 6000) {
+    return NextResponse.json({ error: "Message trop long (6 000 caractères maximum).", traceId }, { status: 413 });
+  }
+  const text = rawText;
   const audience = isAudience(body?.audience) ? body.audience : "adult";
   if (!text) return NextResponse.json({ error: "Message requis.", traceId }, { status: 400 });
 
@@ -138,6 +160,8 @@ export async function POST(request: Request) {
 
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   const identifier = user?.id || forwarded || request.headers.get("x-real-ip") || "unknown";
+  const externalAiAvailable = Boolean(process.env.OPENAI_API_KEY) && conversationStateConfigured();
+  const safetyIdentifier = buildSafetyIdentifier(identifier);
   const limit = await consumeRateLimit("conversation", identifier, 30, 60);
   if (!limit.allowed) {
     return NextResponse.json(
@@ -152,7 +176,7 @@ export async function POST(request: Request) {
     history,
     externalAiConsent: body?.externalAiConsent === true,
     memoryConsent: body?.memoryConsent === true,
-    externalProviderConfigured: Boolean(process.env.OPENAI_API_KEY),
+    externalProviderConfigured: externalAiAvailable,
   });
 
   const respond = (reply: string, source: ConversationSource, diagnostics?: Record<string, unknown>) => {
@@ -169,6 +193,7 @@ export async function POST(request: Request) {
         traceId,
         conversationState,
         labMode,
+        externalAiAvailable,
         diagnostics,
       }),
       { headers: { "Cache-Control": "no-store" } },
@@ -191,9 +216,19 @@ export async function POST(request: Request) {
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 18_000);
+  const configuredTimeout = Number(process.env.ATLAS_OPENAI_TIMEOUT_MS);
+  const timeoutMs = Number.isFinite(configuredTimeout)
+    ? Math.min(90_000, Math.max(10_000, configuredTimeout))
+    : 45_000;
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const generated = await generateAtlasReply({ plan, history, text, signal: controller.signal });
+    const generated = await generateAtlasReply({
+      plan,
+      history,
+      text,
+      safetyIdentifier,
+      signal: controller.signal,
+    });
     const initialCritique = critiqueAtlasResponse({
       reply: generated.text,
       cognitive: plan.cognitive,
@@ -251,6 +286,7 @@ export async function POST(request: Request) {
         text,
         previousReply: generated.text,
         revisionInstructions,
+        safetyIdentifier,
         signal: controller.signal,
       });
       const revisedCritique = critiqueAtlasResponse({
