@@ -7,6 +7,7 @@ import { getAtlasLaunchControl } from "../lib/atlas/launch-control.ts";
   assert.equal(status.phase, "private-preview");
   assert.equal(status.ready, false);
   assert.ok(status.blockers.some((item) => item.id === "legal-entity"));
+  assert.ok(status.blockers.some((item) => item.id === "hosting-notice"));
   assert.ok(!status.blockers.some((item) => item.id === "minor-safety-review"));
   assert.ok(!status.blockers.some((item) => item.id === "production-commerce"));
 }
@@ -22,10 +23,18 @@ import { getAtlasLaunchControl } from "../lib/atlas/launch-control.ts";
   const ready = getAtlasLaunchControl({
     NODE_ENV: "test",
     ATLAS_LEGAL_ENTITY: "ATLAS SAS",
+    ATLAS_LEGAL_FORM: "Société par actions simplifiée",
+    ATLAS_LEGAL_ADDRESS: "1 rue Exemple, 75000 Paris",
+    ATLAS_REGISTRATION_ID: "SIREN 000 000 000",
+    ATLAS_PUBLICATION_DIRECTOR: "Direction ATLAS",
     ATLAS_TERMS_VERSION: "2026-08-15",
     ATLAS_PRIVACY_VERSION: "2026-08-15",
-    ATLAS_SUPPORT_EMAIL: "support@atlas.example",
-    ATLAS_PRIVACY_EMAIL: "privacy@atlas.example",
+    ATLAS_SUPPORT_EMAIL: "support@atlas.fr",
+    ATLAS_PRIVACY_EMAIL: "privacy@atlas.fr",
+    ATLAS_SECURITY_EMAIL: "security@atlas.fr",
+    ATLAS_HUMAN_RELAY: "Support humain surveillé",
+    ATLAS_HOST_LEGAL_NAME: "Hébergeur Exemple",
+    ATLAS_HOST_LEGAL_ADDRESS: "Adresse hébergeur",
     ATLAS_APP_URL: "https://atlas.fr",
     ATLAS_PUBLIC_COUNTRY: "FR",
     ATLAS_PUBLIC_LAUNCH_APPROVED: "true",

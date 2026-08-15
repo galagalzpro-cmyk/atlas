@@ -1,3 +1,5 @@
+import { getAtlasLegalProfile } from "./legal-profile";
+
 export type AtlasLaunchCategory = "founder" | "infrastructure" | "independent" | "operations" | "commerce";
 export type AtlasLaunchOwner = "founder" | "engineering" | "independent-review" | "operations";
 
@@ -63,11 +65,13 @@ export function getAtlasLaunchControl(env: NodeJS.ProcessEnv): AtlasLaunchContro
   const checkoutRequested = approved(env.ATLAS_ENABLE_PRODUCTION_CHECKOUT);
   const adolescentLaunch = audienceEnabled(env, "adolescent");
   const seniorLaunch = audienceEnabled(env, "senior");
+  const legal = getAtlasLegalProfile(env);
 
   const checks: AtlasLaunchCheck[] = [
-    { id: "legal-entity", category: "founder", owner: "founder", label: "Identité juridique", description: "Raison sociale ou identité de l’éditeur juridiquement validée.", satisfied: present(env.ATLAS_LEGAL_ENTITY), required: true },
-    { id: "legal-documents", category: "founder", owner: "founder", label: "Versions contractuelles", description: "Versions définitives des conditions et de la politique de confidentialité.", satisfied: present(env.ATLAS_TERMS_VERSION) && present(env.ATLAS_PRIVACY_VERSION), required: true },
-    { id: "public-contacts", category: "founder", owner: "founder", label: "Contacts publics", description: "Adresses de support et de confidentialité destinées aux utilisateurs.", satisfied: present(env.ATLAS_SUPPORT_EMAIL) && present(env.ATLAS_PRIVACY_EMAIL), required: true },
+    { id: "legal-entity", category: "founder", owner: "founder", label: "Identité juridique complète", description: "Nom légal, forme, adresse, immatriculation et directeur de publication validés.", satisfied: legal.identityComplete, required: true },
+    { id: "legal-documents", category: "founder", owner: "founder", label: "Versions contractuelles", description: "Versions définitives des conditions et de la politique de confidentialité.", satisfied: legal.documentsComplete, required: true },
+    { id: "public-contacts", category: "founder", owner: "founder", label: "Contacts publics", description: "Support, confidentialité, sécurité et relais humain réellement surveillé.", satisfied: legal.contactsComplete, required: true },
+    { id: "hosting-notice", category: "founder", owner: "founder", label: "Mentions d’hébergement", description: "Identité et adresse contractuelle de l’hébergeur confirmées.", satisfied: legal.hostingComplete, required: true },
     { id: "public-domain", category: "founder", owner: "founder", label: "Domaine public", description: "URL HTTPS définitive utilisée par ATLAS.", satisfied: validPublicUrl(env.ATLAS_APP_URL), required: true },
     { id: "france-scope", category: "founder", owner: "founder", label: "Périmètre France", description: "Le premier lancement reste limité à la France.", satisfied: env.ATLAS_PUBLIC_COUNTRY === "FR", required: true },
     { id: "founder-launch-approval", category: "founder", owner: "founder", label: "Décision de lancement", description: "Autorisation explicite du fondateur après réception des preuves.", satisfied: approved(env.ATLAS_PUBLIC_LAUNCH_APPROVED), required: true },
