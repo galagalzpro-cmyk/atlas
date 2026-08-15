@@ -19,16 +19,28 @@ function parseSender(value: string): { name?: string; email: string } | null {
 async function sendWithBrevo(input: TransactionalEmailInput, apiKey: string, from: string): Promise<boolean> {
   const sender = parseSender(from);
   if (!sender) return false;
+
+  const messageHeaders: Record<string, string> = {
+    idempotencyKey: crypto.randomUUID(),
+  };
+  if (process.env.ATLAS_EMAIL_SANDBOX === "true") {
+    messageHeaders["X-Sib-Sandbox"] = "drop";
+  }
+
   const response = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
-    headers: { Accept: "application/json", "api-key": apiKey, "Content-Type": "application/json", IdempotencyKey: crypto.randomUUID() },
+    headers: {
+      Accept: "application/json",
+      "api-key": apiKey,
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({
       sender,
       to: [{ email: input.to }],
       subject: input.subject,
       htmlContent: input.html,
       tags: ["atlas-transactional"],
-      ...(process.env.ATLAS_EMAIL_SANDBOX === "true" ? { headers: { "X-Sib-Sandbox": "drop" } } : {}),
+      headers: messageHeaders,
     }),
     cache: "no-store",
   });
