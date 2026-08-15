@@ -1,4 +1,4 @@
-import { getAtlasLegalProfile } from "./legal-profile";
+import { getAtlasLegalProfile } from "./legal-profile.ts";
 
 export type AtlasLaunchCategory = "founder" | "infrastructure" | "independent" | "operations" | "commerce";
 export type AtlasLaunchOwner = "founder" | "engineering" | "independent-review" | "operations";
