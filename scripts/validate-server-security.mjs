@@ -15,6 +15,8 @@ const files = {
   conversationState: await readFile("lib/server/conversation-state.ts", "utf8"),
   ai: await readFile("lib/server/ai.ts", "utf8"),
   maintenance: await readFile("app/api/maintenance/route.ts", "utf8"),
+  health: await readFile("app/api/health/route.ts", "utf8"),
+  consentManager: await readFile("components/site/AtlasConsentManager.tsx", "utf8"),
   passwordReset: await readFile("lib/server/password-reset.ts", "utf8"),
   schema: `${await readFile("database/001_foundation.sql", "utf8")}\n${await readFile("database/002_operations.sql", "utf8")}`,
 };
@@ -50,6 +52,9 @@ const requirements = [
   [files.schema.includes("token_hash text NOT NULL UNIQUE"), "session hashes must be unique"],
   [files.schema.includes("UNIQUE (provider, provider_event_id)"), "provider webhook identifiers must be unique"],
   [files.schema.includes("revoked_at timestamptz"), "sessions must support revocation"],
+  [files.health.includes('"Cache-Control": "no-store') && !files.health.includes("process.env"), "health endpoint must be uncached and must not expose configuration"],
+  [files.consentManager.includes("DEFAULT_CONSENT") && files.consentManager.includes("analytics: false") && files.consentManager.includes("marketing: false"), "analytics and marketing consent must default to denied"],
+  [files.consentManager.includes("googleLoaderId ?") && files.consentManager.includes("consent.marketing && metaPixelId"), "external trackers must be loaded only after category consent"],
 ];
 
 const failures = requirements.filter(([passed]) => !passed).map(([, message]) => message);

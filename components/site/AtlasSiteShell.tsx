@@ -23,7 +23,7 @@ export function AtlasSiteShell({ children, compact = false }: { children: ReactN
           <span className="site-brand-mark">A</span>
           <span>
             <strong>ATLAS</strong>
-            <small>INTELLIGENCE ÉMOTIONNELLE AUTONOME</small>
+            <small>ASSISTANCE ÉMOTIONNELLE GOUVERNÉE</small>
           </span>
         </Link>
 
@@ -43,7 +43,7 @@ export function AtlasSiteShell({ children, compact = false }: { children: ReactN
         <div>
           <Link href="/" className="site-brand site-brand-footer">
             <span className="site-brand-mark">A</span>
-            <span><strong>ATLAS</strong><small>AUTONOMOUS EMOTIONAL OS</small></span>
+            <span><strong>ATLAS</strong><small>PRÉSENCE NUMÉRIQUE GOUVERNÉE</small></span>
           </Link>
           <p>Une présence numérique conçue pour aider à comprendre, clarifier et avancer sans confisquer le choix.</p>
         </div>
@@ -53,7 +53,7 @@ export function AtlasSiteShell({ children, compact = false }: { children: ReactN
           <div><strong>Informations</strong><Link href="/a-propos">À propos</Link><Link href="/confidentialite">Confidentialité</Link><Link href="/mentions-legales">Mentions légales</Link></div>
         </div>
         <div className="site-footer-bottom">
-          <span>ATLAS V5 · environnement privé de préproduction</span>
+          <span>Environnement privé de préproduction</span>
           <span>Assistance numérique · pas de diagnostic · pas d’action sensible sans consentement</span>
         </div>
       </footer>

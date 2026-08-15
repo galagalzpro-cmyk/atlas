@@ -2,6 +2,7 @@
   "name": "atlas",
   "version": "1.0.0-rc.1",
   "private": true,
+  "type": "module",
   "engines": {
     "node": "24.x"
   },
@@ -21,7 +22,7 @@
     "check": "npm run check:architecture && npm run check:security && npm run test:runtime && npm run test:core && npm run test:v4 && npm run test:v5:model-routing && npm run typecheck && npm run build"
   },
   "dependencies": {
-    "next": "16.2.12",
+    "next": "16.3.0",
     "pg": "8.22.0",
     "react": "19.2.8",
     "react-dom": "19.2.8"

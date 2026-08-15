@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent } from "react";
+import type { CSSProperties, FormEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import AtlasNeuralCanvas, { type LoungeQuality, type LoungeVisualState } from "../../components/atlas/lounge/AtlasNeuralCanvas";
 
@@ -72,6 +72,11 @@ export default function AtlasConversationLounge() {
   const recognitionRef = useRef<BrowserRecognition | null>(null);
   const stageRef = useRef<HTMLElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const controlsPanelRef = useRef<HTMLElement | null>(null);
+  const threadPanelRef = useRef<HTMLElement | null>(null);
+  const controlsCloseRef = useRef<HTMLButtonElement | null>(null);
+  const threadCloseRef = useRef<HTMLButtonElement | null>(null);
+  const returnFocusRef = useRef<HTMLButtonElement | null>(null);
   const model = AUDIENCES[audience];
 
   const visualState: LoungeVisualState = calmMode
@@ -99,6 +104,46 @@ export default function AtlasConversationLounge() {
     window.speechSynthesis?.cancel();
   }, []);
 
+  useEffect(() => {
+    const panel = controlsOpen ? controlsPanelRef.current : threadOpen ? threadPanelRef.current : null;
+    const closeButton = controlsOpen ? controlsCloseRef.current : threadCloseRef.current;
+    if (!panel) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusFrame = requestAnimationFrame(() => closeButton?.focus());
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setControlsOpen(false);
+        setThreadOpen(false);
+        const target = returnFocusRef.current;
+        requestAnimationFrame(() => target?.focus());
+        return;
+      }
+      if (event.key !== "Tab" || !panel) return;
+      const focusable = Array.from(panel.querySelectorAll<HTMLElement>("button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]"));
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      cancelAnimationFrame(focusFrame);
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [controlsOpen, threadOpen]);
+
   function speak(text: string) {
     if (!voiceEnabled || typeof window === "undefined" || !("speechSynthesis" in window)) {
       setSpeaking(false);
@@ -122,7 +167,7 @@ export default function AtlasConversationLounge() {
     setSpeaking(false);
   }
 
-  function reset(nextAudience = audience) {
+  function reset(nextAudience = audience, focusComposer = true) {
     recognitionRef.current?.stop();
     stopVoice();
     setAudience(nextAudience);
@@ -130,7 +175,26 @@ export default function AtlasConversationLounge() {
     setConversationState(null);
     setMessage("");
     setNotice("");
-    requestAnimationFrame(() => textareaRef.current?.focus());
+    if (focusComposer) requestAnimationFrame(() => textareaRef.current?.focus());
+  }
+
+  function openControls(event: ReactMouseEvent<HTMLButtonElement>) {
+    returnFocusRef.current = event.currentTarget;
+    setThreadOpen(false);
+    setControlsOpen(true);
+  }
+
+  function openThread(event: ReactMouseEvent<HTMLButtonElement>) {
+    returnFocusRef.current = event.currentTarget;
+    setControlsOpen(false);
+    setThreadOpen(true);
+  }
+
+  function closeDialogs() {
+    setControlsOpen(false);
+    setThreadOpen(false);
+    const target = returnFocusRef.current;
+    requestAnimationFrame(() => target?.focus());
   }
 
   function toggleListening() {
@@ -229,7 +293,7 @@ export default function AtlasConversationLounge() {
         <header className="atlas-sanctuary-header">
           <Link href="/" className="atlas-signature" aria-label="Retour à l’accueil ATLAS">
             <span className="atlas-sigil"><i /><i /><i /></span>
-            <span><strong>ATLAS</strong><small>Présence émotionnelle autonome</small></span>
+            <span><strong>ATLAS</strong><small>Présence numérique interactive</small></span>
           </Link>
           <div className="atlas-state-pill" aria-live="polite"><i /><span>État : {stateCopy.title.toLowerCase()}</span></div>
         </header>
@@ -272,12 +336,12 @@ export default function AtlasConversationLounge() {
           </div>
         </div>
 
-        <div className="atlas-response" aria-live="polite">
+        <div className="atlas-response" aria-live="polite" aria-busy={loading}>
           <p>{loading ? "Je rassemble ce qui compte…" : lastAssistant}</p>
         </div>
 
         <form className="atlas-command-dock" onSubmit={send}>
-          <button type="button" className={`dock-mic${listening ? " is-active" : ""}`} onClick={toggleListening} aria-label={listening ? "Arrêter l’écoute" : "Parler à ATLAS"}>
+          <button type="button" className={`dock-mic${listening ? " is-active" : ""}`} onClick={toggleListening} aria-label={listening ? "Arrêter l’écoute" : "Parler à ATLAS"} aria-pressed={listening}>
             <span aria-hidden="true">◉</span>
           </button>
           <div className="dock-main">
@@ -297,42 +361,42 @@ export default function AtlasConversationLounge() {
               rows={1}
               placeholder="Écrivez ici…"
             />
-            <button type="button" className="conversation-mode" onClick={() => setControlsOpen(true)}>Conversation profonde <span>⌄</span></button>
+            <button type="button" className="conversation-mode" onClick={openControls} aria-expanded={controlsOpen} aria-controls="atlas-controls-dialog">Conversation profonde <span>⌄</span></button>
           </div>
           <button type="submit" className="dock-send" disabled={!message.trim() || loading} aria-label="Envoyer"><span>↗</span></button>
         </form>
 
         <div className="dock-utilities">
-          <button type="button" onClick={() => setThreadOpen(true)}>Fil</button>
-          <button type="button" onClick={() => setCalmMode((value) => !value)}>{calmMode ? "Réactiver" : "Calme"}</button>
-          <button type="button" onClick={() => setControlsOpen(true)}>Réglages</button>
+          <button type="button" onClick={openThread} aria-expanded={threadOpen} aria-controls="atlas-thread-dialog">Fil</button>
+          <button type="button" onClick={() => setCalmMode((value) => !value)} aria-pressed={calmMode}>{calmMode ? "Réactiver" : "Calme"}</button>
+          <button type="button" onClick={openControls} aria-expanded={controlsOpen} aria-controls="atlas-controls-dialog">Réglages</button>
         </div>
 
         {notice ? <p className="atlas-notice" role="alert">{notice}</p> : null}
       </section>
 
       {controlsOpen ? (
-        <div className="atlas-overlay" role="dialog" aria-modal="true" aria-label="Réglages ATLAS">
-          <button className="overlay-backdrop" aria-label="Fermer" onClick={() => setControlsOpen(false)} />
-          <section className="atlas-control-panel">
-            <div className="panel-heading"><span>ATLAS</span><button type="button" onClick={() => setControlsOpen(false)}>Fermer</button></div>
-            <h2>Réglages de présence</h2>
+        <div id="atlas-controls-dialog" className="atlas-overlay" role="dialog" aria-modal="true" aria-labelledby="atlas-controls-title">
+          <button type="button" className="overlay-backdrop" aria-hidden="true" tabIndex={-1} onClick={closeDialogs} />
+          <section ref={controlsPanelRef} className="atlas-control-panel">
+            <div className="panel-heading"><span>ATLAS</span><button ref={controlsCloseRef} type="button" onClick={closeDialogs}>Fermer</button></div>
+            <h2 id="atlas-controls-title">Réglages de présence</h2>
             <div className="control-grid">
-              <label><span>Public</span><select value={audience} onChange={(event) => reset(event.target.value as Audience)}>{(Object.keys(AUDIENCES) as Audience[]).map((key) => <option key={key} value={key}>{AUDIENCES[key].label}</option>)}</select></label>
+              <label><span>Public</span><select value={audience} onChange={(event) => reset(event.target.value as Audience, false)}>{(Object.keys(AUDIENCES) as Audience[]).map((key) => <option key={key} value={key}>{AUDIENCES[key].label}</option>)}</select></label>
               <label className="control-toggle"><span><strong>Voix ATLAS</strong><small>Lecture locale des réponses</small></span><input type="checkbox" checked={voiceEnabled} onChange={(event) => { setVoiceEnabled(event.target.checked); if (!event.target.checked) stopVoice(); }} /></label>
               <label className="control-toggle"><span><strong>IA avancée</strong><small>Autoriser le fournisseur externe pour cette session</small></span><input type="checkbox" checked={externalAiConsent} onChange={(event) => setExternalAiConsent(event.target.checked)} /></label>
               <label className="control-toggle"><span><strong>Mode calme</strong><small>Réduire mouvement et intensité</small></span><input type="checkbox" checked={calmMode} onChange={(event) => setCalmMode(event.target.checked)} /></label>
             </div>
-            <div className="control-foot"><span>Moteur visuel : {quality}</span><button type="button" onClick={() => reset()}>Nouvelle conversation</button></div>
+            <div className="control-foot"><span>Moteur visuel : {quality}</span><button type="button" onClick={() => { closeDialogs(); reset(); }}>Nouvelle conversation</button></div>
           </section>
         </div>
       ) : null}
 
       {threadOpen ? (
-        <div className="atlas-overlay" role="dialog" aria-modal="true" aria-label="Fil de discussion">
-          <button className="overlay-backdrop" aria-label="Fermer" onClick={() => setThreadOpen(false)} />
-          <section className="atlas-thread-panel">
-            <div className="panel-heading"><span>FIL DE DISCUSSION</span><button type="button" onClick={() => setThreadOpen(false)}>Fermer</button></div>
+        <div id="atlas-thread-dialog" className="atlas-overlay" role="dialog" aria-modal="true" aria-labelledby="atlas-thread-title">
+          <button type="button" className="overlay-backdrop" aria-hidden="true" tabIndex={-1} onClick={closeDialogs} />
+          <section ref={threadPanelRef} className="atlas-thread-panel">
+            <div className="panel-heading"><span id="atlas-thread-title">FIL DE DISCUSSION</span><button ref={threadCloseRef} type="button" onClick={closeDialogs}>Fermer</button></div>
             <div className="thread-list">{turns.map((turn, index) => <article key={`${turn.role}-${index}`} data-role={turn.role}><small>{turn.role === "assistant" ? "ATLAS" : "VOUS"}</small><p>{turn.text}</p></article>)}</div>
           </section>
         </div>

@@ -4,7 +4,9 @@ import { join } from "node:path";
 const requiredFiles = [
   "app/page.tsx",
   "app/api/conversation/route.ts",
+  "app/api/health/route.ts",
   "app/api/readiness/route.ts",
+  "components/site/AtlasConsentManager.tsx",
   "lib/atlas/types.ts",
   "lib/atlas/reducer.ts",
   "lib/atlas/persistence.ts",
