@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { assessSafety } from "../../../lib/atlas/safety";
 import { buildReply } from "../../../lib/atlas/conversation";
 import type { AtlasAudience } from "../../../lib/atlas/types";
-import { generateAtlasReply } from "../../../lib/server/ai";
+import { externalAiConfigured, generateAtlasReply } from "../../../lib/server/ai";
 import { consumeRateLimit } from "../../../lib/server/rate-limit";
 import { databaseConfigured, getDatabase } from "../../../lib/server/database";
 import { getCurrentUser } from "../../../lib/server/auth";
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
   const safety = assessSafety(text, audience);
   const localReply = buildReply(text, audience, safety);
-  if (safety.level === "urgent" || safety.shouldPauseGeneration || !externalAiConsent || !process.env.OPENAI_API_KEY) {
+  if (safety.level === "urgent" || safety.shouldPauseGeneration || !externalAiConsent || !externalAiConfigured()) {
     return NextResponse.json({ reply: localReply, safety, source: "local" }, { headers: { "Cache-Control": "no-store" } });
   }
 
