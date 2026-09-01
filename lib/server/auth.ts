@@ -7,6 +7,7 @@ import type { AtlasRole } from "../atlas/access";
 
 const COOKIE_NAME = "atlas_session";
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 14;
+const STRONG_AUTH_DURATION_MS = 1000 * 60 * 15;
 
 export interface AtlasSessionUser {
   id: string;
@@ -43,8 +44,8 @@ export async function createSession(userId: string): Promise<void> {
   const userAgentHash = hashOptionalFingerprint(requestHeaders.get("user-agent"));
   const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
   await getDatabase().query(
-    `INSERT INTO atlas_sessions (user_id, token_hash, expires_at, user_agent_hash)
-     VALUES ($1, $2, $3, $4)`,
+    `INSERT INTO atlas_sessions (user_id, token_hash, expires_at, user_agent_hash, strong_auth_at)
+     VALUES ($1, $2, $3, $4, now())`,
     [userId, tokenHash, expiresAt, userAgentHash],
   );
   const cookieStore = await cookies();
@@ -83,6 +84,22 @@ export async function getCurrentUser(): Promise<AtlasSessionUser | null> {
        AND u.disabled_at IS NULL`,
     [hashToken(token)],
   );
+}
+
+export async function hasRecentStrongAuth(userId: string): Promise<boolean> {
+  if (!databaseConfigured()) return false;
+  const token = (await cookies()).get(COOKIE_NAME)?.value;
+  if (!token) return false;
+  const row = await queryOne<{ strongAuthSatisfied: boolean }>(
+    `SELECT (strong_auth_at IS NOT NULL AND strong_auth_at > $3) AS "strongAuthSatisfied"
+     FROM atlas_sessions
+     WHERE token_hash = $1
+       AND user_id = $2
+       AND revoked_at IS NULL
+       AND expires_at > now()`,
+    [hashToken(token), userId, new Date(Date.now() - STRONG_AUTH_DURATION_MS)],
+  );
+  return row?.strongAuthSatisfied === true;
 }
 
 export async function requireUser(): Promise<AtlasSessionUser> {

@@ -1,13 +1,21 @@
 # ATLAS — Neural Reinvented
 
-Prototype front-end haute fidélité basé sur la maquette sombre validée.
+Version candidate de la plateforme ATLAS : expérience haute fidélité, comptes serveur, gouvernance des outils, ensemble IA et services connectés.
 
 ## Points clés
 - Premier écran fidèle à la référence validée, utilisé comme master visuel adaptatif 2K/4K/8K.
 - Effets neuraux, halo de pointeur et parallaxe intégrés sans contrôle technique visible.
 - Parcours émotionnel, respiration et relais humain simulés localement.
 - Responsive mobile, réduction des mouvements et PWA.
-- Aucun service externe, aucune donnée transmise.
+- Registre d’outils avec séparation lecture, écriture et action sensible.
+- Connexions OAuth Google Workspace, Slack, GitHub App et Linear, avec références de secrets chiffrées côté serveur.
+- Aucun contenu émotionnel persistant dans les audits ou les métriques techniques.
 
 ## Limites
-Ce prototype ne contient pas encore l'IA réelle, les comptes, le paiement, la mémoire sécurisée ou le relais humain opérationnel.
+Les intégrations externes restent inactives tant que l’environnement serveur, les consentements et les permissions minimales ne sont pas configurés. Les paiements de production et les actions critiques restent bloqués par les portes de sécurité prévues.
+
+## Documentation
+
+- [Services connectés OAuth](docs/ATLAS_CONNECTED_SERVICES.md)
+- [Runbook de préproduction](docs/ATLAS_PREPRODUCTION_RUNBOOK.md)
+- [Blueprint de production](docs/ATLAS_PRODUCTION_BLUEPRINT.md)
