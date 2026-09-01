@@ -47,7 +47,7 @@ function extractOpenAIOutputText(payload: unknown): string {
   const root = payload as { output_text?: unknown; output?: unknown };
   if (typeof root.output_text === "string") return root.output_text;
   if (!Array.isArray(root.output)) return "";
-  return root.flatMap ? "" : root.output.flatMap((item) => {
+  return root.output.flatMap((item) => {
     if (!item || typeof item !== "object") return [];
     const content = (item as { content?: unknown }).content;
     if (!Array.isArray(content)) return [];
@@ -192,6 +192,13 @@ async function generateWithGemini(input: {
     requestId: response.headers.get("x-request-id") || payload.responseId || null,
     latencyMs: Date.now() - startedAt,
   };
+}
+
+export function externalAiConfigured(): boolean {
+  const mode = (process.env.ATLAS_AI_MODE || "openai").toLowerCase();
+  if (mode === "gemini") return Boolean(process.env.GEMINI_API_KEY);
+  if (mode === "collaboration") return Boolean(process.env.OPENAI_API_KEY && process.env.GEMINI_API_KEY);
+  return Boolean(process.env.OPENAI_API_KEY);
 }
 
 export async function generateAtlasReply(input: {
