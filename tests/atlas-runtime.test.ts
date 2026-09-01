@@ -6,6 +6,7 @@ import { hasCapability } from "../lib/atlas/access.ts";
 import { canActivateExternalProvider, sanitizeAnalyticsMetadata } from "../lib/atlas/governance.ts";
 import { getCommerceReadiness } from "../lib/atlas/commerce.ts";
 import { evaluateToolAccess, getAtlasTool } from "../lib/atlas/tools.ts";
+import { isConnectedToolAvailable, resolveConnectionCapabilities } from "../lib/atlas/connected-tools.ts";
 
 const standard = assessSafety("Je dois organiser ma semaine", "adult");
 assert.equal(standard.level, "standard");
@@ -104,5 +105,40 @@ const visitorDenied = evaluateToolAccess({
 });
 assert.equal(visitorDenied.allowed, false);
 assert.equal(visitorDenied.reason, "missing_capability");
+
+const googleReadCapabilities = resolveConnectionCapabilities("google", [
+  "openid",
+  "email",
+  "https://www.googleapis.com/auth/gmail.readonly",
+  "https://www.googleapis.com/auth/calendar.events.readonly",
+  "https://www.googleapis.com/auth/drive.metadata.readonly",
+]);
+assert.equal(googleReadCapabilities.includes("gmail.read"), true);
+assert.equal(googleReadCapabilities.includes("calendar.search"), true);
+assert.equal(googleReadCapabilities.includes("drive.search"), true);
+assert.equal(googleReadCapabilities.includes("drive.read"), false);
+assert.equal(googleReadCapabilities.includes("gmail.send"), false);
+
+const slackReadCapabilities = resolveConnectionCapabilities("slack", ["search:read", "channels:history"]);
+assert.deepEqual(slackReadCapabilities, ["slack.search", "slack.read"]);
+
+const githubReadCapabilities = resolveConnectionCapabilities("github", ["metadata:read", "contents:read"]);
+assert.equal(githubReadCapabilities.includes("github.search"), true);
+assert.equal(githubReadCapabilities.includes("github.read"), true);
+assert.equal(githubReadCapabilities.includes("github.merge"), false);
+
+const linearReadCapabilities = resolveConnectionCapabilities("linear", ["read"]);
+assert.deepEqual(linearReadCapabilities, ["linear.search", "linear.read"]);
+
+assert.equal(isConnectedToolAvailable("gmail.read", [{
+  provider: "google",
+  status: "active",
+  capabilities: googleReadCapabilities,
+}]), true);
+assert.equal(isConnectedToolAvailable("gmail.read", [{
+  provider: "google",
+  status: "revoked",
+  capabilities: googleReadCapabilities,
+}]), false);
 
 console.log("ATLAS runtime, safety, governance and tool-policy tests passed.");

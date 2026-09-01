@@ -12,10 +12,11 @@ Cette branche constitue une version candidate de préproduction. Elle ne doit pa
 4. Définir les variables bootstrap temporaires et exécuter `npm run db:bootstrap-admin` une seule fois.
 5. Supprimer immédiatement les variables bootstrap.
 6. Configurer `ATLAS_APP_URL`, `CRON_SECRET`, le fournisseur d’e-mail et, facultativement, OpenAI.
-7. Configurer Stripe et PayPal uniquement avec des identifiants sandbox.
-8. Enregistrer les endpoints `/api/webhooks/stripe` et `/api/webhooks/paypal` auprès des fournisseurs.
-9. Planifier l’appel authentifié de `/api/maintenance`.
-10. Vérifier `/api/readiness` jusqu’à obtenir `preproduction-ready`.
+7. Configurer les applications OAuth et le coffre de connecteurs depuis le gestionnaire de secrets de l’environnement, puis enregistrer les callbacks décrits dans `ATLAS_CONNECTED_SERVICES.md`.
+8. Configurer Stripe et PayPal uniquement avec des identifiants sandbox.
+9. Enregistrer les endpoints `/api/webhooks/stripe` et `/api/webhooks/paypal` auprès des fournisseurs.
+10. Planifier l’appel authentifié de `/api/maintenance`.
+11. Vérifier `/api/readiness` jusqu’à obtenir `preproduction-ready`.
 
 ## 3. Tests d’acceptation
 
@@ -38,6 +39,15 @@ Cette branche constitue une version candidate de préproduction. Elle ne doit pa
 - Rejet d’un webhook dont la signature est invalide.
 - Idempotence lors de la répétition d’un même événement.
 - Mise à jour d’abonnement uniquement après webhook vérifié.
+
+### Services connectés
+- Refus d’un callback dont le `state`, le cookie de liaison, l’utilisateur ou l’expiration ne correspondent pas.
+- Refus de la réutilisation d’une transaction OAuth déjà consommée.
+- Présence de PKCE S256 pour Google, GitHub App et Linear.
+- Absence de jeton brut dans `atlas_tool_connections`, les réponses HTTP et les événements d’audit.
+- Activation des seuls outils couverts par les permissions accordées.
+- Rotation d’un jeton expirant et remplacement atomique de sa référence.
+- Révocation distante avant suppression locale, avec confirmation explicite et authentification forte récente.
 
 ### Exploitation
 - Readiness retourne 503 lorsqu’une dépendance obligatoire manque.

@@ -14,7 +14,13 @@ const files = {
   tools: await readFile("lib/atlas/tools.ts", "utf8"),
   maintenance: await readFile("app/api/maintenance/route.ts", "utf8"),
   passwordReset: await readFile("lib/server/password-reset.ts", "utf8"),
-  schema: `${await readFile("database/001_foundation.sql", "utf8")}\n${await readFile("database/002_operations.sql", "utf8")}\n${await readFile("database/003_tooling.sql", "utf8")}`,
+  connectorSecrets: await readFile("lib/server/connector-secrets.ts", "utf8"),
+  oauthSecurity: await readFile("lib/server/oauth-security.ts", "utf8"),
+  oauthProviders: await readFile("lib/server/oauth-providers.ts", "utf8"),
+  oauthConnections: await readFile("lib/server/connections.ts", "utf8"),
+  oauthCallback: await readFile("app/api/connections/[provider]/callback/route.ts", "utf8"),
+  oauthDisconnect: await readFile("app/api/connections/[provider]/disconnect/route.ts", "utf8"),
+  schema: `${await readFile("database/001_foundation.sql", "utf8")}\n${await readFile("database/002_operations.sql", "utf8")}\n${await readFile("database/003_tooling.sql", "utf8")}\n${await readFile("database/004_oauth_connections.sql", "utf8")}`,
 };
 
 const requirements = [
@@ -48,6 +54,14 @@ const requirements = [
   [files.schema.includes("CREATE TABLE IF NOT EXISTS atlas_tool_runs"), "tool executions must have an action ledger"],
   [files.schema.includes("CREATE TABLE IF NOT EXISTS atlas_tool_approvals"), "sensitive tool actions must have approval evidence"],
   [files.schema.includes("secret_reference text") && !files.schema.includes("access_token text") && !files.schema.includes("refresh_token text"), "connector table must reference secrets rather than store raw OAuth tokens"],
+  [files.connectorSecrets.includes('const ALGORITHM = "aes-256-gcm"') && files.connectorSecrets.includes("setAAD"), "connector credentials must use authenticated encryption"],
+  [files.oauthSecurity.includes("randomBytes(32)") && files.schema.includes("state_hash text NOT NULL UNIQUE"), "OAuth state must be random, hashed and single-use"],
+  [files.oauthSecurity.includes("browserBindingHash") && files.schema.includes("browser_binding_hash"), "OAuth callbacks must be bound to the initiating browser"],
+  [files.oauthProviders.includes('code_challenge_method", "S256"') && files.oauthConnections.includes("pkce_verifier"), "supported OAuth providers must use PKCE S256"],
+  [files.oauthConnections.includes("SET consumed_at = now()") && files.oauthCallback.includes("completeOAuthConnection"), "OAuth callbacks must atomically consume their transaction"],
+  [files.oauthDisconnect.includes("hasRecentStrongAuth") && files.oauthDisconnect.includes("explicit_confirmation_required"), "connector revocation must require confirmation and recent strong authentication"],
+  [files.oauthConnections.includes("evaluateToolAccess") && files.oauthConnections.includes("getAuthorizedConnectedToolCredential"), "connected credentials must remain behind the tool approval policy"],
+  [files.schema.includes("encrypted_payload bytea") && files.schema.includes("verifier_reference text"), "OAuth credentials and PKCE verifiers must be stored behind secret references"],
 ];
 
 const failures = requirements.filter(([passed]) => !passed).map(([, message]) => message);

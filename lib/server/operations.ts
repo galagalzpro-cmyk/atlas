@@ -48,16 +48,20 @@ export async function getOperationsSnapshot(): Promise<AtlasOperationsSnapshot> 
 export async function runOperationalCleanup(): Promise<Record<string, number>> {
   if (!databaseConfigured()) throw new Error("Database unavailable");
   const database = getDatabase();
-  const [sessions, resets, invitations, rateLimits] = await Promise.all([
+  const [sessions, resets, invitations, rateLimits, oauthTransactions, connectorSecrets] = await Promise.all([
     database.query(`DELETE FROM atlas_sessions WHERE expires_at < now() - interval '7 days' OR revoked_at < now() - interval '30 days'`),
     database.query(`DELETE FROM atlas_password_reset_tokens WHERE expires_at < now() - interval '24 hours' OR used_at < now() - interval '7 days'`),
     database.query(`DELETE FROM atlas_organization_invitations WHERE expires_at < now() - interval '30 days' OR revoked_at < now() - interval '30 days'`),
     database.query(`DELETE FROM atlas_rate_limit_windows WHERE expires_at < now()`),
+    database.query(`DELETE FROM atlas_oauth_transactions WHERE expires_at < now() - interval '24 hours' OR consumed_at < now() - interval '24 hours'`),
+    database.query(`DELETE FROM atlas_connector_secret_records WHERE expires_at IS NOT NULL AND expires_at < now()`),
   ]);
   return {
     sessions: sessions.rowCount ?? 0,
     passwordResets: resets.rowCount ?? 0,
     invitations: invitations.rowCount ?? 0,
     rateLimits: rateLimits.rowCount ?? 0,
+    oauthTransactions: oauthTransactions.rowCount ?? 0,
+    connectorSecrets: connectorSecrets.rowCount ?? 0,
   };
 }
