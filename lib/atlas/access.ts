@@ -3,6 +3,7 @@ export type AtlasRole = "visitor" | "member" | "professional" | "organization_ad
 export type AtlasCapability =
   | "use_public_session"
   | "manage_own_preferences"
+  | "use_connected_tools"
   | "view_professional_workspace"
   | "manage_organization_members"
   | "view_aggregated_metrics"
@@ -12,11 +13,12 @@ export type AtlasCapability =
 
 const ROLE_CAPABILITIES: Record<AtlasRole, AtlasCapability[]> = {
   visitor: ["use_public_session"],
-  member: ["use_public_session", "manage_own_preferences"],
-  professional: ["use_public_session", "manage_own_preferences", "view_professional_workspace", "view_aggregated_metrics"],
+  member: ["use_public_session", "manage_own_preferences", "use_connected_tools"],
+  professional: ["use_public_session", "manage_own_preferences", "use_connected_tools", "view_professional_workspace", "view_aggregated_metrics"],
   organization_admin: [
     "use_public_session",
     "manage_own_preferences",
+    "use_connected_tools",
     "view_professional_workspace",
     "manage_organization_members",
     "view_aggregated_metrics",
@@ -25,6 +27,7 @@ const ROLE_CAPABILITIES: Record<AtlasRole, AtlasCapability[]> = {
   atlas_admin: [
     "use_public_session",
     "manage_own_preferences",
+    "use_connected_tools",
     "view_professional_workspace",
     "manage_organization_members",
     "view_aggregated_metrics",
