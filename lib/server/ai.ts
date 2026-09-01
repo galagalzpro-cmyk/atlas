@@ -152,7 +152,7 @@ async function generateWithGemini(input: {
   reviewOf?: ProviderReply;
 }): Promise<ProviderReply> {
   const apiKey = process.env.GEMINI_API_KEY;
-  const model = process.env.ATLAS_GEMINI_MODEL || "gemini-3.7-flash";
+  const model = process.env.ATLAS_GEMINI_MODEL || "gemini-3.6-flash";
   if (!apiKey) throw new Error("Gemini is not configured");
 
   const startedAt = Date.now();
