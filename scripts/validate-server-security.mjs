@@ -11,9 +11,10 @@ const files = {
   paypalRoute: await readFile("app/api/webhooks/paypal/route.ts", "utf8"),
   conversationRoute: await readFile("app/api/conversation/route.ts", "utf8"),
   ai: await readFile("lib/server/ai.ts", "utf8"),
+  tools: await readFile("lib/atlas/tools.ts", "utf8"),
   maintenance: await readFile("app/api/maintenance/route.ts", "utf8"),
   passwordReset: await readFile("lib/server/password-reset.ts", "utf8"),
-  schema: `${await readFile("database/001_foundation.sql", "utf8")}\n${await readFile("database/002_operations.sql", "utf8")}`,
+  schema: `${await readFile("database/001_foundation.sql", "utf8")}\n${await readFile("database/002_operations.sql", "utf8")}\n${await readFile("database/003_tooling.sql", "utf8")}`,
 };
 
 const requirements = [
@@ -31,14 +32,22 @@ const requirements = [
   [files.stripeRoute.includes("verifyStripeSignature"), "Stripe webhook must verify signatures"],
   [files.paypalRoute.includes("verifyPayPalWebhook"), "PayPal webhook must verify signatures"],
   [files.webhooks.includes("ON CONFLICT (provider, provider_event_id) DO NOTHING"), "webhooks must be idempotent"],
-  [files.ai.includes("store: false"), "external AI requests must disable provider storage"],
+  [files.ai.includes("store: false"), "OpenAI requests must disable provider storage"],
   [files.conversationRoute.includes("assessSafety"), "local safety must run before external generation"],
   [files.conversationRoute.includes("externalAiConsent"), "external AI must require explicit consent"],
+  [files.tools.includes('tool("gmail.send", "mail"') && files.tools.includes('"sensitive", "confirm"'), "email sending must require explicit confirmation"],
+  [files.tools.includes('tool("github.merge", "code"') && files.tools.includes('"sensitive", "strong_auth"'), "GitHub merges must require strong authentication"],
+  [files.tools.includes('tool("vercel.deploy.production", "deployment"') && files.tools.includes('"sensitive", "strong_auth"'), "production deployment must require strong authentication"],
+  [files.tools.includes('tool("payments.checkout", "payments"') && files.tools.includes('"sensitive", "strong_auth"'), "payments must require strong authentication"],
+  [files.tools.includes("connectionAvailable") && files.tools.includes("missing_capability"), "tool access must validate connection and role capability"],
   [files.maintenance.includes("timingSafeEqual"), "maintenance endpoint secret comparison must be timing safe"],
   [files.passwordReset.includes("UPDATE atlas_sessions SET revoked_at = now()"), "password reset must revoke sessions"],
   [files.schema.includes("token_hash text NOT NULL UNIQUE"), "session hashes must be unique"],
   [files.schema.includes("UNIQUE (provider, provider_event_id)"), "provider webhook identifiers must be unique"],
   [files.schema.includes("revoked_at timestamptz"), "sessions must support revocation"],
+  [files.schema.includes("CREATE TABLE IF NOT EXISTS atlas_tool_runs"), "tool executions must have an action ledger"],
+  [files.schema.includes("CREATE TABLE IF NOT EXISTS atlas_tool_approvals"), "sensitive tool actions must have approval evidence"],
+  [files.schema.includes("secret_reference text") && !files.schema.includes("access_token text") && !files.schema.includes("refresh_token text"), "connector table must reference secrets rather than store raw OAuth tokens"],
 ];
 
 const failures = requirements.filter(([passed]) => !passed).map(([, message]) => message);
